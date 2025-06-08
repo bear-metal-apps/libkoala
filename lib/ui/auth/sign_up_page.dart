@@ -1,3 +1,4 @@
+import 'package:appwrite/enums.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:libkoala/providers/auth_provider.dart';
@@ -7,10 +8,15 @@ import 'package:simple_icons/simple_icons.dart';
 
 class SignUpPage extends StatefulWidget {
   final void Function()? onSuccess;
-  final String? title;
-  final double? maxWidth;
+  final String title;
+  final double maxWidth;
 
-  const SignUpPage({super.key, this.onSuccess, this.title, this.maxWidth});
+  const SignUpPage({
+    super.key,
+    this.onSuccess,
+    this.title = 'Sign Up',
+    this.maxWidth = 300.0,
+  });
 
   @override
   State<SignUpPage> createState() => _SignUpPageState();
@@ -88,9 +94,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
       if (success) {
         TextInput.finishAutofillContext();
-        if (widget.onSuccess != null) {
-          widget.onSuccess!();
-        }
+        widget.onSuccess?.call();
       } else if (authProvider.error != null) {
         final error = authProvider.error!;
         if (error.contains('weak-password') ||
@@ -119,9 +123,9 @@ class _SignUpPageState extends State<SignUpPage> {
 
   @override
   Widget build(BuildContext context) {
-    final maxWidth = widget.maxWidth ?? 300.0;
+    final maxWidth = widget.maxWidth;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title ?? 'Sign Up')),
+      appBar: AppBar(title: Text(widget.title)),
       body: Column(
         children: [
           Expanded(
@@ -142,7 +146,25 @@ class _SignUpPageState extends State<SignUpPage> {
                         width: maxWidth,
                         constraints: BoxConstraints(maxWidth: maxWidth),
                         child: OutlinedButton.icon(
-                          onPressed: _isLoading ? null : () {},
+                          onPressed: _isLoading
+                              ? null
+                              : () async {
+                                  final success = context
+                                      .read<AuthProvider>()
+                                      .signInWithOauth(
+                                        provider: OAuthProvider.apple,
+                                      );
+                                  if (await success) {
+                                    TextInput.finishAutofillContext();
+                                    widget.onSuccess?.call();
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Apple sign-in failed'),
+                                      ),
+                                    );
+                                  }
+                                },
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size.fromHeight(50),
                           ),
@@ -155,7 +177,25 @@ class _SignUpPageState extends State<SignUpPage> {
                         width: maxWidth,
                         constraints: BoxConstraints(maxWidth: maxWidth),
                         child: OutlinedButton.icon(
-                          onPressed: _isLoading ? null : () {},
+                          onPressed: _isLoading
+                              ? null
+                              : () async {
+                                  final success = context
+                                      .read<AuthProvider>()
+                                      .signInWithOauth(
+                                        provider: OAuthProvider.google,
+                                      );
+                                  if (await success) {
+                                    TextInput.finishAutofillContext();
+                                    widget.onSuccess?.call();
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Google sign-in failed'),
+                                      ),
+                                    );
+                                  }
+                                },
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size.fromHeight(50),
                           ),
@@ -168,7 +208,25 @@ class _SignUpPageState extends State<SignUpPage> {
                         width: maxWidth,
                         constraints: BoxConstraints(maxWidth: maxWidth),
                         child: OutlinedButton.icon(
-                          onPressed: _isLoading ? null : () {},
+                          onPressed: _isLoading
+                              ? null
+                              : () async {
+                                  final success = context
+                                      .read<AuthProvider>()
+                                      .signInWithOauth(
+                                        provider: OAuthProvider.github,
+                                      );
+                                  if (await success) {
+                                    TextInput.finishAutofillContext();
+                                    widget.onSuccess?.call();
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('GitHub sign-in failed'),
+                                      ),
+                                    );
+                                  }
+                                },
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size.fromHeight(50),
                           ),
