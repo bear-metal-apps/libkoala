@@ -16,8 +16,10 @@ Future<void> showSignUpSheet(
     isScrollControlled: true,
     builder: (context) => Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        top: 24,
+        bottom:
+            MediaQuery.of(context).viewInsets.bottom +
+            16, //Makes sure you can still see it even when there's a keyboard
+        top: 16,
         left: 16,
         right: 16,
       ),
@@ -137,6 +139,11 @@ class _SignUpSheetContentState extends State<_SignUpSheetContent> {
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
+          const Text(
+            'Beariscope Account',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
           Container(
             width: 300,
             constraints: const BoxConstraints(maxWidth: 300),

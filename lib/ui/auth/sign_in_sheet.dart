@@ -16,8 +16,10 @@ Future<void> showSignInSheet(
     isScrollControlled: true,
     builder: (context) => Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        top: 24,
+        bottom:
+            MediaQuery.of(context).viewInsets.bottom +
+            16, //Makes sure you can still see it even when there's a keyboard
+        top: 16,
         left: 16,
         right: 16,
       ),
@@ -94,8 +96,9 @@ class _SignInSheetContentState extends State<_SignInSheetContent> {
             _emailError = null;
             _passwordError = null;
           });
-          if (widget.onError != null)
+          if (widget.onError != null) {
             widget.onError!("Incorrect email or password");
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Incorrect email or password')),
           );
@@ -104,8 +107,9 @@ class _SignInSheetContentState extends State<_SignInSheetContent> {
         } else if (error.contains('email')) {
           setState(() => _emailError = 'Invalid email');
         } else if (error.contains('general_rate_limit_exceeded')) {
-          if (widget.onError != null)
+          if (widget.onError != null) {
             widget.onError!("Rate limit hit, please try again later");
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Rate limit hit, please try again later'),
@@ -138,6 +142,11 @@ class _SignInSheetContentState extends State<_SignInSheetContent> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          const Text(
+            'Beariscope Account',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
           Container(
             width: 300,
             constraints: const BoxConstraints(maxWidth: 300),
