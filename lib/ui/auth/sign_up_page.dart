@@ -122,11 +122,16 @@ class _SignUpPageState extends State<SignUpPage> {
     final maxWidth = widget.maxWidth ?? 300.0;
     return Scaffold(
       appBar: AppBar(title: Text(widget.title ?? 'Sign Up')),
-      body: Stack(
+      body: Column(
         children: [
-          Positioned.fill(
+          Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 56),
+              padding: const EdgeInsets.only(
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+              ),
               child: Center(
                 child: Form(
                   key: _formKey,
@@ -313,39 +318,35 @@ class _SignUpPageState extends State<SignUpPage> {
                               )
                             : const Text('Sign Up'),
                       ),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
               ),
             ),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        'Beariscope & Beargenda use the same accounts',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      'Beariscope & Beargenda use the same accounts',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),

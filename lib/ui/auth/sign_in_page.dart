@@ -115,11 +115,10 @@ class _SignInPageState extends State<SignInPage> {
     final maxWidth = widget.maxWidth ?? 300.0;
     return Scaffold(
       appBar: AppBar(title: Text(widget.title ?? 'Sign In')),
-      body: Stack(
+      body: Column(
         children: [
-          Positioned.fill(
+          Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.only(bottom: 56),
               child: Center(
                 child: Form(
                   key: _formKey,
@@ -240,39 +239,35 @@ class _SignInPageState extends State<SignInPage> {
                               )
                             : const Text('Sign In'),
                       ),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
               ),
             ),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        'Beariscope & Beargenda use the same accounts',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      'Beariscope & Beargenda use the same accounts',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
