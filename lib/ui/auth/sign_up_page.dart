@@ -126,6 +126,7 @@ class _SignUpPageState extends State<SignUpPage> {
         children: [
           Positioned.fill(
             child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 56),
               child: Center(
                 child: Form(
                   key: _formKey,
@@ -312,7 +313,6 @@ class _SignUpPageState extends State<SignUpPage> {
                               )
                             : const Text('Sign Up'),
                       ),
-                      const SizedBox(height: 32), // Extra space for bottom info
                     ],
                   ),
                 ),
