@@ -122,208 +122,234 @@ class _SignUpPageState extends State<SignUpPage> {
     final maxWidth = widget.maxWidth ?? 300.0;
     return Scaffold(
       appBar: AppBar(title: Text(widget.title ?? 'Sign Up')),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: maxWidth,
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: OutlinedButton.icon(
-                    onPressed: _isLoading ? null : () {},
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
-                    ),
-                    label: const Text('Sign up with Apple'),
-                    icon: const Icon(SimpleIcons.apple),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  width: maxWidth,
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: OutlinedButton.icon(
-                    onPressed: _isLoading ? null : () {},
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
-                    ),
-                    label: const Text('Sign up with Google'),
-                    icon: const Icon(SimpleIcons.google),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  width: maxWidth,
-                  constraints: BoxConstraints(maxWidth: maxWidth),
-                  child: OutlinedButton.icon(
-                    onPressed: _isLoading ? null : () {},
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
-                    ),
-                    label: const Text('Sign up with GitHub'),
-                    icon: const Icon(SimpleIcons.github),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextDivider(),
-                const SizedBox(height: 16),
-                AutofillGroup(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: SingleChildScrollView(
+              child: Center(
+                child: Form(
+                  key: _formKey,
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      TextFormField(
-                        controller: _nameController,
-                        focusNode: _nameFocusNode,
-                        decoration: const InputDecoration(
-                          labelText: 'Name',
-                          border: OutlineInputBorder(),
-                          constraints: BoxConstraints(
-                            minWidth: 200,
-                            maxWidth: 300,
+                      Container(
+                        width: maxWidth,
+                        constraints: BoxConstraints(maxWidth: maxWidth),
+                        child: OutlinedButton.icon(
+                          onPressed: _isLoading ? null : () {},
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                           ),
+                          label: const Text('Sign up with Apple'),
+                          icon: const Icon(SimpleIcons.apple),
                         ),
-                        autofillHints: const [AutofillHints.name],
-                        keyboardType: TextInputType.name,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Name required';
-                          }
-                          return null;
-                        },
-                        onFieldSubmitted: (_) {
-                          FocusScope.of(context).requestFocus(_emailFocusNode);
-                        },
-                        enabled: !_isLoading,
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _emailController,
-                        focusNode: _emailFocusNode,
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          border: const OutlineInputBorder(),
-                          constraints: const BoxConstraints(
-                            minWidth: 200,
-                            maxWidth: 300,
+                      Container(
+                        width: maxWidth,
+                        constraints: BoxConstraints(maxWidth: maxWidth),
+                        child: OutlinedButton.icon(
+                          onPressed: _isLoading ? null : () {},
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                           ),
-                          errorText: _emailError,
+                          label: const Text('Sign up with Google'),
+                          icon: const Icon(SimpleIcons.google),
                         ),
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Email Required';
-                          }
-                          return null;
-                        },
-                        onFieldSubmitted: (_) {
-                          FocusScope.of(
-                            context,
-                          ).requestFocus(_passwordFocusNode);
-                        },
-                        enabled: !_isLoading,
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _passwordController,
-                        focusNode: _passwordFocusNode,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          border: const OutlineInputBorder(),
-                          constraints: const BoxConstraints(
-                            minWidth: 200,
-                            maxWidth: 300,
+                      Container(
+                        width: maxWidth,
+                        constraints: BoxConstraints(maxWidth: maxWidth),
+                        child: OutlinedButton.icon(
+                          onPressed: _isLoading ? null : () {},
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                           ),
-                          errorText: _passwordError,
+                          label: const Text('Sign up with GitHub'),
+                          icon: const Icon(SimpleIcons.github),
                         ),
-                        obscureText: true,
-                        autofillHints: const [AutofillHints.newPassword],
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Password required';
-                          }
-                          return null;
-                        },
-                        onFieldSubmitted: (_) {
-                          FocusScope.of(
-                            context,
-                          ).requestFocus(_confirmPasswordFocusNode);
-                        },
-                        enabled: !_isLoading,
                       ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _confirmPasswordController,
-                        focusNode: _confirmPasswordFocusNode,
-                        textInputAction: TextInputAction.done,
-                        decoration: InputDecoration(
-                          labelText: 'Confirm Password',
-                          border: const OutlineInputBorder(),
-                          constraints: const BoxConstraints(
-                            minWidth: 200,
-                            maxWidth: 300,
-                          ),
-                          errorText:
-                              (_passwordController.text !=
-                                      _confirmPasswordController.text) &&
-                                  _confirmPasswordController.text.isNotEmpty
-                              ? 'Passwords do not match'
-                              : null,
+                      const SizedBox(height: 16),
+                      TextDivider(),
+                      const SizedBox(height: 16),
+                      AutofillGroup(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            TextFormField(
+                              controller: _nameController,
+                              focusNode: _nameFocusNode,
+                              decoration: const InputDecoration(
+                                labelText: 'Name',
+                                border: OutlineInputBorder(),
+                                constraints: BoxConstraints(
+                                  minWidth: 200,
+                                  maxWidth: 300,
+                                ),
+                              ),
+                              autofillHints: const [AutofillHints.name],
+                              keyboardType: TextInputType.name,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Name required';
+                                }
+                                return null;
+                              },
+                              onFieldSubmitted: (_) {
+                                FocusScope.of(
+                                  context,
+                                ).requestFocus(_emailFocusNode);
+                              },
+                              enabled: !_isLoading,
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _emailController,
+                              focusNode: _emailFocusNode,
+                              decoration: InputDecoration(
+                                labelText: 'Email',
+                                border: const OutlineInputBorder(),
+                                constraints: const BoxConstraints(
+                                  minWidth: 200,
+                                  maxWidth: 300,
+                                ),
+                                errorText: _emailError,
+                              ),
+                              keyboardType: TextInputType.emailAddress,
+                              autofillHints: const [AutofillHints.email],
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Email Required';
+                                }
+                                return null;
+                              },
+                              onFieldSubmitted: (_) {
+                                FocusScope.of(
+                                  context,
+                                ).requestFocus(_passwordFocusNode);
+                              },
+                              enabled: !_isLoading,
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _passwordController,
+                              focusNode: _passwordFocusNode,
+                              decoration: InputDecoration(
+                                labelText: 'Password',
+                                border: const OutlineInputBorder(),
+                                constraints: const BoxConstraints(
+                                  minWidth: 200,
+                                  maxWidth: 300,
+                                ),
+                                errorText: _passwordError,
+                              ),
+                              obscureText: true,
+                              autofillHints: const [AutofillHints.newPassword],
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Password required';
+                                }
+                                return null;
+                              },
+                              onFieldSubmitted: (_) {
+                                FocusScope.of(
+                                  context,
+                                ).requestFocus(_confirmPasswordFocusNode);
+                              },
+                              enabled: !_isLoading,
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _confirmPasswordController,
+                              focusNode: _confirmPasswordFocusNode,
+                              textInputAction: TextInputAction.done,
+                              decoration: InputDecoration(
+                                labelText: 'Confirm Password',
+                                border: const OutlineInputBorder(),
+                                constraints: const BoxConstraints(
+                                  minWidth: 200,
+                                  maxWidth: 300,
+                                ),
+                                errorText:
+                                    (_passwordController.text !=
+                                            _confirmPasswordController.text) &&
+                                        _confirmPasswordController
+                                            .text
+                                            .isNotEmpty
+                                    ? 'Passwords do not match'
+                                    : null,
+                              ),
+                              obscureText: true,
+                              autofillHints: const [AutofillHints.newPassword],
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Confirm password required';
+                                }
+                                if (value != _passwordController.text) {
+                                  return 'Passwords do not match';
+                                }
+                                return null;
+                              },
+                              enabled: !_isLoading,
+                            ),
+                          ],
                         ),
-                        obscureText: true,
-                        autofillHints: const [AutofillHints.newPassword],
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Confirm password required';
-                          }
-                          if (value != _passwordController.text) {
-                            return 'Passwords do not match';
-                          }
-                          return null;
-                        },
-                        enabled: !_isLoading,
                       ),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: _isLoading ? null : _signup,
+                        child: _isLoading
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                              )
+                            : const Text('Sign Up'),
+                      ),
+                      const SizedBox(height: 32), // Extra space for bottom info
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: _isLoading ? null : _signup,
-                  child: _isLoading
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        )
-                      : const Text('Sign Up'),
-                ),
-                const SizedBox(height: 24),
-                Row(
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.info_outline, size: 18, color: Colors.grey),
+                    Icon(
+                      Icons.info_outline,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
                         'Beariscope & Beargenda use the same accounts',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
