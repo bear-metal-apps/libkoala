@@ -248,7 +248,7 @@ class _SignInPageState extends State<SignInPage> {
           ),
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
+              padding: const EdgeInsets.all(12.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

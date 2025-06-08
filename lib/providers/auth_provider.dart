@@ -1,8 +1,9 @@
 import 'package:appwrite/appwrite.dart';
+import 'package:appwrite/enums.dart';
 import 'package:appwrite/models.dart' as models;
 import 'package:flutter/foundation.dart';
 
-/// AuthProvider manages all authentication state and logic for the app.
+/// Handles all authentication stuff.
 ///
 /// It's responsible for:
 ///   - Managing user sessions
@@ -95,7 +96,7 @@ class AuthProvider extends ChangeNotifier {
 
   /// Signs in a user with email and password.
   ///
-  /// Returns true if successful, false otherwise.
+  /// Returns true if successful, false if not.
   Future<bool> signIn({required String email, required String password}) async {
     _setLoading(true);
     try {
@@ -116,7 +117,7 @@ class AuthProvider extends ChangeNotifier {
 
   /// Registers a new user and signs them in.
   ///
-  /// Returns true if successful, false otherwise.
+  /// Returns true if successful, false if not.
   Future<bool> signUp({
     required String email,
     required String password,
@@ -146,9 +147,29 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Signs up and logs in a user with an OAuth provider.
+  /// Used for both signing up and in because Appwrite handles both cases.
+  ///
+  /// Returns true if successful, false if not.
+  Future<bool> signInWithOauth({required OAuthProvider provider}) async {
+    _setLoading(true);
+    try {
+      final session = account.createOAuth2Session(provider: provider);
+      _session = await session;
+      _user = await _getCurrentUser();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('Sign up failed: $_error');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   /// Signs out the current user and clears state.
   ///
-  /// Returns true if successful, false otherwise.
+  /// Returns true if successful, false if not.
   Future<bool> signOut() async {
     if (_user == null) return true;
     _setLoading(true);
