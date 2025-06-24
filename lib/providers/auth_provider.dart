@@ -1,5 +1,4 @@
 import 'package:appwrite/appwrite.dart';
-import 'package:appwrite/enums.dart';
 import 'package:appwrite/models.dart' as models;
 import 'package:flutter/foundation.dart';
 
@@ -135,28 +134,11 @@ class AuthProvider extends ChangeNotifier {
         email: email,
         password: password,
       );
+      final verification = await account.createVerification(
+        url: 'https://appwrite.bearmet.al/verify_email',
+      );
       _user = user;
       _session = session;
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      debugPrint('Sign up failed: $_error');
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  /// Signs up and logs in a user with an OAuth provider.
-  /// Used for both signing up and in because Appwrite handles both cases.
-  ///
-  /// Returns true if successful, false if not.
-  Future<bool> signInWithOauth({required OAuthProvider provider}) async {
-    _setLoading(true);
-    try {
-      final session = account.createOAuth2Session(provider: provider);
-      _session = await session;
-      _user = await _getCurrentUser();
       return true;
     } catch (e) {
       _error = e.toString();
@@ -197,4 +179,95 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('User refresh failed: $e');
     }
   }
+
+  // Placeholder for session loading - implement this to load session from storage
+  Future<void> loadSession() async {
+    // Example:
+    // _setLoading(true);
+    // try {
+    //   // Replace with your actual session loading logic (e.g., from flutter_secure_storage)
+    //   final storedSessionId = await _secureStorage.read(key: 'session_id');
+    //   if (storedSessionId != null) {
+    //     // Potentially re-fetch the session or account details to validate
+    //     final acc = await account.get();
+    //     // If account.get() is successful, a session is active.
+    //     // You might want to fetch the session object itself if needed:
+    //     // _currentSession = await account.getSession(sessionId: 'current'); // Or specific ID
+    //     _loggedInUser = acc; // Assuming you have a _loggedInUser state
+    //     _error = null;
+    //   }
+    // } on AppwriteException catch (e) {
+    //   // Handle session invalid or other errors
+    //   _currentSession = null;
+    //   _loggedInUser = null;
+    //   if (e.code != 401) { // Don't show error for "no session" / "user not found"
+    //      _error = "Failed to load session: ${e.message}";
+    //   }
+    // } catch (e) {
+    //   _currentSession = null;
+    //   _loggedInUser = null;
+    //   _error = "Unexpected error loading session: $e";
+    // } finally {
+    //   _setLoading(false);
+    //   notifyListeners();
+    // }
+  }
+
+  // Placeholder for logout - implement this
+  // Future<void> logout() async {
+  // Example:
+  // _setLoading(true);
+  // try {
+  //   if (_currentSession != null) {
+  //     await account.deleteSession(sessionId: _currentSession!.$id); // or 'current'
+  //   } else {
+  //     await account.deleteSessions(); // Fallback if no specific session ID is known
+  //   }
+  //   _currentSession = null;
+  //   _loggedInUser = null;
+  //   // Clear stored session
+  //   await _secureStorage.delete(key: 'session_id');
+  //   _error = null;
+  // } on AppwriteException catch (e) {
+  //   _error = "Logout failed: ${e.message}";
+  //   // Decide if you want to clear local state even if server call fails
+  //   _currentSession = null;
+  //   _loggedInUser = null;
+  //   await _secureStorage.delete(key: 'session_id');
+  // } catch (e) {
+  //   _error = "Unexpected error during logout: $e";
+  //   _currentSession = null;
+  //   _loggedInUser = null;
+  //   await _secureStorage.delete(key: 'session_id');
+  // } finally {
+  //   _setLoading(false);
+  //   notifyListeners();
+  // }
+  //}
+
+  // Helper to set loading state and notify (if not already present)
+  // void _setLoading(bool isLoading) {
+  //   _isLoading = isLoading;
+  // Consider if notifyListeners() should always be called here or by the calling method
+  // For simplicity, often called by the main methods after all state changes.
+  //}
+
+  // You would also need to initialize your Appwrite client and account instance,
+  // typically in the constructor or an init method.
+  // Client client = Client();
+  // late Account account;
+  // models.Session? _currentSession;
+  // models.User? _loggedInUser; // If you store user details
+  // bool _isLoading = false;
+  // String? _error;
+
+  // Example constructor:
+  // AuthProvider() {
+  //   client
+  //       .setEndpoint('YOUR_APPWRITE_ENDPOINT') // Replace with your endpoint
+  //       .setProject('YOUR_PROJECT_ID')         // Replace with your project ID
+  //       .setSelfSigned(status: true); // For local development if using self-signed certs
+  //   account = Account(client);
+  //   loadSession(); // Load session when provider is initialized
+  // }
 }

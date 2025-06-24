@@ -1,10 +1,7 @@
-import 'package:appwrite/enums.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:libkoala/providers/auth_provider.dart';
-import 'package:libkoala/ui/widgets/text_divider.dart';
 import 'package:provider/provider.dart';
-import 'package:simple_icons/simple_icons.dart';
 
 class SignInPage extends StatefulWidget {
   final void Function()? onSuccess;
@@ -129,100 +126,100 @@ class _SignInPageState extends State<SignInPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        width: maxWidth,
-                        constraints: BoxConstraints(maxWidth: maxWidth),
-                        child: OutlinedButton.icon(
-                          onPressed: _isLoading
-                              ? null
-                              : () async {
-                                  final success = context
-                                      .read<AuthProvider>()
-                                      .signInWithOauth(
-                                        provider: OAuthProvider.apple,
-                                      );
-                                  if (await success) {
-                                    TextInput.finishAutofillContext();
-                                    widget.onSuccess?.call();
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Apple sign-in failed'),
-                                      ),
-                                    );
-                                  }
-                                },
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(50),
-                          ),
-                          label: const Text('Sign in with Apple'),
-                          icon: const Icon(SimpleIcons.apple),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        width: maxWidth,
-                        constraints: BoxConstraints(maxWidth: maxWidth),
-                        child: OutlinedButton.icon(
-                          onPressed: _isLoading
-                              ? null
-                              : () async {
-                                  final success = context
-                                      .read<AuthProvider>()
-                                      .signInWithOauth(
-                                        provider: OAuthProvider.google,
-                                      );
-                                  if (await success) {
-                                    TextInput.finishAutofillContext();
-                                    widget.onSuccess?.call();
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Google sign-in failed'),
-                                      ),
-                                    );
-                                  }
-                                },
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(50),
-                          ),
-                          label: const Text('Sign in with Google'),
-                          icon: const Icon(SimpleIcons.google),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        width: maxWidth,
-                        constraints: BoxConstraints(maxWidth: maxWidth),
-                        child: OutlinedButton.icon(
-                          onPressed: _isLoading
-                              ? null
-                              : () async {
-                                  final success = context
-                                      .read<AuthProvider>()
-                                      .signInWithOauth(
-                                        provider: OAuthProvider.github,
-                                      );
-                                  if (await success) {
-                                    TextInput.finishAutofillContext();
-                                    widget.onSuccess?.call();
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('GitHub sign-in failed'),
-                                      ),
-                                    );
-                                  }
-                                },
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(50),
-                          ),
-                          label: const Text('Sign in with GitHub'),
-                          icon: const Icon(SimpleIcons.github),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextDivider(),
+                      // Container(
+                      //   width: maxWidth,
+                      //   constraints: BoxConstraints(maxWidth: maxWidth),
+                      //   child: OutlinedButton.icon(
+                      //     onPressed: _isLoading
+                      //         ? null
+                      //         : () async {
+                      //             final success = context
+                      //                 .read<AuthProvider>()
+                      //                 .signInWithOauth(
+                      //                   provider: OAuthProvider.apple,
+                      //                 );
+                      //             if (await success) {
+                      //               TextInput.finishAutofillContext();
+                      //               widget.onSuccess?.call();
+                      //             } else {
+                      //               ScaffoldMessenger.of(context).showSnackBar(
+                      //                 const SnackBar(
+                      //                   content: Text('Apple sign-in failed'),
+                      //                 ),
+                      //               );
+                      //             }
+                      //           },
+                      //     style: OutlinedButton.styleFrom(
+                      //       minimumSize: const Size.fromHeight(50),
+                      //     ),
+                      //     label: const Text('Sign in with Apple'),
+                      //     icon: const Icon(SimpleIcons.apple),
+                      //   ),
+                      // ),
+                      // const SizedBox(height: 12),
+                      // Container(
+                      //   width: maxWidth,
+                      //   constraints: BoxConstraints(maxWidth: maxWidth),
+                      //   child: OutlinedButton.icon(
+                      //     onPressed: _isLoading
+                      //         ? null
+                      //         : () async {
+                      //             final success = context
+                      //                 .read<AuthProvider>()
+                      //                 .signInWithOauth(
+                      //                   provider: OAuthProvider.google,
+                      //                 );
+                      //             if (await success) {
+                      //               TextInput.finishAutofillContext();
+                      //               widget.onSuccess?.call();
+                      //             } else {
+                      //               ScaffoldMessenger.of(context).showSnackBar(
+                      //                 const SnackBar(
+                      //                   content: Text('Google sign-in failed'),
+                      //                 ),
+                      //               );
+                      //             }
+                      //           },
+                      //     style: OutlinedButton.styleFrom(
+                      //       minimumSize: const Size.fromHeight(50),
+                      //     ),
+                      //     label: const Text('Sign in with Google'),
+                      //     icon: const Icon(SimpleIcons.google),
+                      //   ),
+                      // ),
+                      // const SizedBox(height: 12),
+                      // Container(
+                      //   width: maxWidth,
+                      //   constraints: BoxConstraints(maxWidth: maxWidth),
+                      //   child: OutlinedButton.icon(
+                      //     onPressed: _isLoading
+                      //         ? null
+                      //         : () async {
+                      //             final success = context
+                      //                 .read<AuthProvider>()
+                      //                 .signInWithOauth(
+                      //                   provider: OAuthProvider.github,
+                      //                 );
+                      //             if (await success) {
+                      //               TextInput.finishAutofillContext();
+                      //               widget.onSuccess?.call();
+                      //             } else {
+                      //               ScaffoldMessenger.of(context).showSnackBar(
+                      //                 const SnackBar(
+                      //                   content: Text('GitHub sign-in failed'),
+                      //                 ),
+                      //               );
+                      //             }
+                      //           },
+                      //     style: OutlinedButton.styleFrom(
+                      //       minimumSize: const Size.fromHeight(50),
+                      //     ),
+                      //     label: const Text('Sign in with GitHub'),
+                      //     icon: const Icon(SimpleIcons.github),
+                      //   ),
+                      // ),
+                      // const SizedBox(height: 16),
+                      // TextDivider(),
                       const SizedBox(height: 16),
                       AutofillGroup(
                         child: Column(
