@@ -141,10 +141,9 @@ class TeamProvider extends ChangeNotifier {
         final memberships = await teams.listMemberships(
           teamId: _currentTeam!.$id,
         );
-        final membershipId =
-            memberships.memberships
-                .firstWhere((membership) => membership.userId == user.$id)
-                .$id;
+        final membershipId = memberships.memberships
+            .firstWhere((membership) => membership.userId == user.$id)
+            .$id;
         await teams.deleteMembership(
           teamId: _currentTeam!.$id,
           membershipId: membershipId,
@@ -164,14 +163,19 @@ class TeamProvider extends ChangeNotifier {
     }
   }
 
-  Future<String?> createJoinCode() async {
+  Future<String?> createJoinCode({String? expiresAt}) async {
     _setLoading(true);
     try {
       final execution = await functions.createExecution(
         functionId: '682ead86000333ab4057',
         path: '/create_join_code',
         method: ExecutionMethod.pOST,
-        body: jsonEncode({'teamId': _currentTeam!.$id}),
+        body: jsonEncode({
+          'teamId': _currentTeam!.$id,
+          'expiresAt':
+              expiresAt ??
+              DateTime.now().add(const Duration(days: 7)).toIso8601String(),
+        }),
       );
       final Map<String, dynamic> responseBody = jsonDecode(
         execution.responseBody,
@@ -204,9 +208,7 @@ class TeamProvider extends ChangeNotifier {
         execution.responseBody,
       );
       if (execution.responseStatusCode != 200) {
-        throw Exception(
-          'Failed to use join code: ${responseBody['error'] ?? 'Unknown error'}',
-        );
+        throw Exception(responseBody['error'] ?? 'Unknown error');
       }
       return true;
     } catch (e) {
