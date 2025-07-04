@@ -3,82 +3,71 @@ import 'dart:typed_data';
 import 'package:appwrite/appwrite.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:provider/provider.dart';
 
 class ProfilePicture extends StatefulWidget {
   final double size;
-  final bool ring;
+  final Client client;
+  final String? fallbackText;
 
-  const ProfilePicture({super.key, this.size = 16, this.ring = true});
+  const ProfilePicture({
+    super.key,
+    this.size = 16,
+    required this.client,
+    this.fallbackText,
+  });
 
   @override
   State<ProfilePicture> createState() => _ProfilePictureState();
 }
 
 class _ProfilePictureState extends State<ProfilePicture> {
-  late Future<Uint8List> _avatarFuture;
+  late Future<Uint8List> _future;
 
   @override
   void initState() {
     super.initState();
-    _loadAvatar();
+    _future = Avatars(widget.client).getInitials(height: 192);
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _loadAvatar();
-  }
-
-  void _loadAvatar() {
-    _avatarFuture = Avatars(
-      Provider.of<Client>(context, listen: false),
-    ).getInitials(height: 192);
+  void didUpdateWidget(ProfilePicture oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.client != widget.client) {
+      _future = Avatars(widget.client).getInitials(height: 192);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final double smallerSize = widget.ring
-        ? widget.size / 16 * 14
-        : widget.size;
-
-    return CircleAvatar(
-      backgroundColor: Colors.amber,
-      radius: widget.size,
-      child: CircleAvatar(
-        radius: smallerSize,
-        child: FutureBuilder<Uint8List>(
-          future: _avatarFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return CircleAvatar(
-                radius: smallerSize,
-                backgroundColor: Colors.amber,
-                child: Icon(
-                  Symbols.person_rounded,
-                  size: smallerSize,
-                  color: Colors.black,
-                ),
-              );
-            } else if (snapshot.hasData) {
-              return CircleAvatar(
-                radius: smallerSize,
-                backgroundImage: MemoryImage(snapshot.data!),
-              );
-            } else {
-              return CircleAvatar(
-                radius: smallerSize,
-                backgroundColor: Colors.red,
-                child: Icon(
-                  Symbols.error_rounded,
-                  size: smallerSize,
-                  color: Colors.white,
-                ),
-              );
-            }
-          },
-        ),
-      ),
+    return FutureBuilder<Uint8List>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // They see me loadin'
+          return SizedBox(
+            width: widget.size * 2, // x2 because CircleAvatar uses radius
+            height: widget.size * 2, // same here
+            child: CircularProgressIndicator(),
+          );
+        } else if (snapshot.hasData) {
+          // Show profile picture
+          return CircleAvatar(
+            radius: widget.size,
+            backgroundImage: MemoryImage(snapshot.data!),
+          );
+        } else {
+          // Show error icon if we can't load the picture (typically due to being a guest)
+          return CircleAvatar(
+            radius: widget.size,
+            backgroundColor: Theme.of(context).colorScheme.error,
+            child: Icon(
+              Symbols.error_rounded,
+              size: widget.size,
+              color: Theme.of(context).colorScheme.onError,
+            ),
+          );
+        }
+      },
     );
   }
 }

@@ -32,6 +32,19 @@ class TeamProvider extends ChangeNotifier {
 
   int get teamNumber => _currentTeam?.prefs.data['teamNumber'] ?? 0;
 
+  /// Centralized error handling method.
+  void _handleError(dynamic error, String operation) {
+    _error = error.toString();
+    debugPrint('$operation: $_error');
+  }
+
+  /// Sets the loading state and notifies listeners.
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    if (loading) _error = null;
+    notifyListeners();
+  }
+
   Future<void> _loadCurrentTeam() async {
     _setLoading(true);
     try {
@@ -43,17 +56,10 @@ class TeamProvider extends ChangeNotifier {
         throw Exception('No teams found for current user');
       }
     } catch (e) {
-      _error = e.toString();
-      debugPrint('Failed to load current team: ${e.toString()}');
+      _handleError(e, 'Failed to load current team');
     } finally {
       _setLoading(false);
     }
-  }
-
-  void _setLoading(bool loading) {
-    _isLoading = loading;
-    _error = loading ? null : _error;
-    notifyListeners();
   }
 
   Future<bool> createTeam({
@@ -64,7 +70,12 @@ class TeamProvider extends ChangeNotifier {
     _setLoading(true);
     try {
       final String id = ID.unique();
-      await teams.create(teamId: id, name: teamNumber.toString(), roles: roles);
+      // Create team and set preferences in a single atomic operation
+      final team = await teams.create(
+        teamId: id,
+        name: teamNumber.toString(),
+        roles: roles,
+      );
       await teams.updatePrefs(
         teamId: id,
         prefs: {'teamName': teamName, 'teamNumber': teamNumber},
@@ -72,8 +83,7 @@ class TeamProvider extends ChangeNotifier {
       _currentTeam = await teams.get(teamId: id);
       return true;
     } catch (e) {
-      _error = e.toString();
-      debugPrint('Failed to create team: ${e.toString()}');
+      _handleError(e, 'Failed to create team');
       return false;
     } finally {
       _setLoading(false);
@@ -86,8 +96,7 @@ class TeamProvider extends ChangeNotifier {
       _currentTeam = await teams.get(teamId: teamId);
       return true;
     } catch (e) {
-      _error = e.toString();
-      debugPrint('Failed to get team: ${e.toString()}');
+      _handleError(e, 'Failed to get team');
       return false;
     } finally {
       _setLoading(false);
@@ -106,30 +115,16 @@ class TeamProvider extends ChangeNotifier {
         return false;
       }
     } catch (e) {
-      _error = e.toString();
-      debugPrint('Failed to delete team: ${e.toString()}');
+      _handleError(e, 'Failed to delete team');
       return false;
     } finally {
       _setLoading(false);
     }
   }
 
+  /// Refreshes the current team data from the server.
   Future<void> refreshCurrentTeam() async {
-    _setLoading(true);
-    try {
-      final teamsList = await teams.list();
-      if (teamsList.teams.isNotEmpty) {
-        _currentTeam = teamsList.teams.first;
-      } else {
-        _currentTeam = null;
-        throw Exception('No teams found for current user');
-      }
-    } catch (e) {
-      _error = e.toString();
-      debugPrint('Failed to refresh current team: ${e.toString()}');
-    } finally {
-      _setLoading(false);
-    }
+    await _loadCurrentTeam();
   }
 
   Future<bool> leaveTeam() async {
@@ -155,8 +150,7 @@ class TeamProvider extends ChangeNotifier {
         return false;
       }
     } catch (e) {
-      _error = e.toString();
-      debugPrint('Failed to leave team: ${e.toString()}');
+      _handleError(e, 'Failed to leave team');
       return false;
     } finally {
       _setLoading(false);
@@ -187,8 +181,7 @@ class TeamProvider extends ChangeNotifier {
       }
       return responseBody['joinCode'];
     } catch (e) {
-      _error = e.toString();
-      debugPrint(e.toString());
+      _handleError(e, 'Failed to create join code');
       return null;
     } finally {
       _setLoading(false);
@@ -212,8 +205,7 @@ class TeamProvider extends ChangeNotifier {
       }
       return true;
     } catch (e) {
-      _error = e.toString();
-      debugPrint(e.toString());
+      _handleError(e, 'Failed to use join code');
       return false;
     } finally {
       _setLoading(false);

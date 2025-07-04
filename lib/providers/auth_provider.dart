@@ -58,39 +58,26 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _checkAuthState() async {
     _setLoading(true);
     try {
-      _user = await _getCurrentUser();
-      _session = await _getSession();
+      _user = await account.get();
+      _session = await account.getSession(sessionId: 'current');
     } catch (e) {
-      debugPrint('Auth state check failed: ${e.toString()}');
+      _handleError(e, 'Auth state check failed');
     } finally {
       _setLoading(false);
     }
   }
 
+  /// Centralized error handling method.
+  void _handleError(dynamic error, String operation) {
+    _error = error.toString();
+    debugPrint('$operation: $_error');
+  }
+
   /// Sets the loading state and notifies listeners.
   void _setLoading(bool loading) {
     _isLoading = loading;
-    _error = loading ? null : _error;
+    if (loading) _error = null;
     notifyListeners();
-  }
-
-  /// Gets the current user from Appwrite, or null if not signed in.
-  Future<models.User?> _getCurrentUser() async {
-    try {
-      final user = await account.get();
-      return user;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Gets the current session from Appwrite, or null if not signed in.
-  Future<models.Session?> _getSession() async {
-    try {
-      return await account.getSession(sessionId: 'current');
-    } catch (e) {
-      return null;
-    }
   }
 
   /// Signs in a user with email and password.
@@ -106,8 +93,7 @@ class AuthProvider extends ChangeNotifier {
       _user = await account.get();
       return true;
     } catch (e) {
-      _error = e.toString();
-      debugPrint('Login failed: $_error');
+      _handleError(e, 'Login failed');
       return false;
     } finally {
       _setLoading(false);
@@ -134,15 +120,14 @@ class AuthProvider extends ChangeNotifier {
         email: email,
         password: password,
       );
-      final verification = await account.createVerification(
+      await account.createVerification(
         url: 'https://appwrite.bearmet.al/verify_email',
       );
       _user = user;
       _session = session;
       return true;
     } catch (e) {
-      _error = e.toString();
-      debugPrint('Sign up failed: $_error');
+      _handleError(e, 'Sign up failed');
       return false;
     } finally {
       _setLoading(false);
@@ -161,8 +146,7 @@ class AuthProvider extends ChangeNotifier {
       _session = null;
       return true;
     } catch (e) {
-      _error = e.toString();
-      debugPrint('Logout failed: $_error');
+      _handleError(e, 'Logout failed');
       return false;
     } finally {
       _setLoading(false);
@@ -173,101 +157,10 @@ class AuthProvider extends ChangeNotifier {
   Future<void> refreshUser() async {
     if (!isAuthed) return;
     try {
-      _user = await _getCurrentUser();
+      _user = await account.get();
       notifyListeners();
     } catch (e) {
-      debugPrint('User refresh failed: $e');
+      _handleError(e, 'User refresh failed');
     }
   }
-
-  // Placeholder for session loading - implement this to load session from storage
-  Future<void> loadSession() async {
-    // Example:
-    // _setLoading(true);
-    // try {
-    //   // Replace with your actual session loading logic (e.g., from flutter_secure_storage)
-    //   final storedSessionId = await _secureStorage.read(key: 'session_id');
-    //   if (storedSessionId != null) {
-    //     // Potentially re-fetch the session or account details to validate
-    //     final acc = await account.get();
-    //     // If account.get() is successful, a session is active.
-    //     // You might want to fetch the session object itself if needed:
-    //     // _currentSession = await account.getSession(sessionId: 'current'); // Or specific ID
-    //     _loggedInUser = acc; // Assuming you have a _loggedInUser state
-    //     _error = null;
-    //   }
-    // } on AppwriteException catch (e) {
-    //   // Handle session invalid or other errors
-    //   _currentSession = null;
-    //   _loggedInUser = null;
-    //   if (e.code != 401) { // Don't show error for "no session" / "user not found"
-    //      _error = "Failed to load session: ${e.message}";
-    //   }
-    // } catch (e) {
-    //   _currentSession = null;
-    //   _loggedInUser = null;
-    //   _error = "Unexpected error loading session: $e";
-    // } finally {
-    //   _setLoading(false);
-    //   notifyListeners();
-    // }
-  }
-
-  // Placeholder for logout - implement this
-  // Future<void> logout() async {
-  // Example:
-  // _setLoading(true);
-  // try {
-  //   if (_currentSession != null) {
-  //     await account.deleteSession(sessionId: _currentSession!.$id); // or 'current'
-  //   } else {
-  //     await account.deleteSessions(); // Fallback if no specific session ID is known
-  //   }
-  //   _currentSession = null;
-  //   _loggedInUser = null;
-  //   // Clear stored session
-  //   await _secureStorage.delete(key: 'session_id');
-  //   _error = null;
-  // } on AppwriteException catch (e) {
-  //   _error = "Logout failed: ${e.message}";
-  //   // Decide if you want to clear local state even if server call fails
-  //   _currentSession = null;
-  //   _loggedInUser = null;
-  //   await _secureStorage.delete(key: 'session_id');
-  // } catch (e) {
-  //   _error = "Unexpected error during logout: $e";
-  //   _currentSession = null;
-  //   _loggedInUser = null;
-  //   await _secureStorage.delete(key: 'session_id');
-  // } finally {
-  //   _setLoading(false);
-  //   notifyListeners();
-  // }
-  //}
-
-  // Helper to set loading state and notify (if not already present)
-  // void _setLoading(bool isLoading) {
-  //   _isLoading = isLoading;
-  // Consider if notifyListeners() should always be called here or by the calling method
-  // For simplicity, often called by the main methods after all state changes.
-  //}
-
-  // You would also need to initialize your Appwrite client and account instance,
-  // typically in the constructor or an init method.
-  // Client client = Client();
-  // late Account account;
-  // models.Session? _currentSession;
-  // models.User? _loggedInUser; // If you store user details
-  // bool _isLoading = false;
-  // String? _error;
-
-  // Example constructor:
-  // AuthProvider() {
-  //   client
-  //       .setEndpoint('YOUR_APPWRITE_ENDPOINT') // Replace with your endpoint
-  //       .setProject('YOUR_PROJECT_ID')         // Replace with your project ID
-  //       .setSelfSigned(status: true); // For local development if using self-signed certs
-  //   account = Account(client);
-  //   loadSession(); // Load session when provider is initialized
-  // }
 }
