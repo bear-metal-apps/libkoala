@@ -1,166 +1,189 @@
-import 'package:appwrite/appwrite.dart';
-import 'package:appwrite/models.dart' as models;
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
 
-/// Handles all authentication stuff.
-///
-/// It's responsible for:
-///   - Managing user sessions
-///   - Handling sign in, sign up, and sign out
-///   - Exposing the current user and session
-///   - Notifying listeners when authentication state changes
-///
-/// Usage:
-///   Instantiate with an Appwrite [Client].
-///   Listen to changes with a Consumer or Provider.
-class AuthProvider extends ChangeNotifier {
-  final Client client;
-  final Account account;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:libkoala/providers/device_info_provider.dart';
+import 'package:libkoala/providers/secure_storage_provider.dart';
+import 'package:openid_client/openid_client_io.dart';
+import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-  models.User? _user;
-  models.Session? _session;
-  bool _isLoading = false;
-  String? _error;
+part 'auth_provider.g.dart';
 
-  /// Creates a new AuthProvider instance and automatically checks the authentication state.
-  ///
-  /// This constructor initializes the provider with the required Appwrite client
-  /// and immediately attempts to restore any existing user session.
-  ///
-  /// Parameters:
-  ///   - client: The Appwrite client instance
-  AuthProvider({required this.client}) : account = Account(client) {
-    _checkAuthState();
+enum AuthStatus { authenticated, unauthenticated, authenticating }
+
+final authStatusProvider = StateProvider<AuthStatus>(
+  (ref) => AuthStatus.unauthenticated,
+);
+
+@riverpod
+Auth auth(Ref ref) {
+  final storage = ref.watch(secureStorageProvider);
+  final deviceInfo = ref.watch(deviceInfoProvider);
+
+  final String redirectUri;
+  if (deviceInfo.deviceOS == DeviceOS.ios ||
+      deviceInfo.deviceOS == DeviceOS.macos) {
+    redirectUri = 'msauth.org.tahomarobotics.beariscope://auth';
+  } else if (deviceInfo.deviceOS == DeviceOS.android) {
+    redirectUri =
+        'msauth://org.tahomarobotics.beariscope/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D';
+  } else {
+    // Use a loopback address for desktop and web
+    redirectUri = 'http://localhost:4000';
   }
 
-  /// Returns the current authenticated user, or null if not signed in.
-  models.User? get user => _user;
+  final discoveryUrl = Uri.parse(
+    'https://login.microsoftonline.com/9bc79ca8-229e-4f3d-990c-300c8407fe5d/v2.0/',
+  );
+  const clientId = 'c001bbf4-138d-430c-861a-a83535463a53';
+  const scopes = ['openid', 'profile', 'email', 'offline_access', 'User.Read'];
 
-  /// Returns the current session, or null if not signed in.
-  models.Session? get session => _session;
+  return Auth(
+    ref: ref,
+    storage: storage,
+    discoveryUrl: discoveryUrl,
+    clientId: clientId,
+    redirectUri: redirectUri,
+    scopes: scopes,
+  );
+}
 
-  /// True if a user is authenticated.
-  bool get isAuthed => _user != null;
+class Auth {
+  final Ref ref;
+  final FlutterSecureStorage storage;
+  final Uri discoveryUrl;
+  final String clientId;
+  final String redirectUri;
+  final List<String> scopes;
 
-  /// True if an authentication operation is in progress.
-  bool get isLoading => _isLoading;
+  Auth({
+    required this.ref,
+    required this.storage,
+    required this.discoveryUrl,
+    required this.clientId,
+    required this.redirectUri,
+    required this.scopes,
+  });
 
-  /// The last error message, if any.
-  String? get error => _error;
-
-  /// The user's display name, or 'Guest' if not signed in.
-  String get userName => _user?.name ?? 'Guest';
-
-  /// The user's email, or empty string if not signed in.
-  String get userEmail => _user?.email ?? '';
-
-  /// Checks and restores authentication state on startup.
-  Future<void> _checkAuthState() async {
-    _setLoading(true);
+  Future<TokenResponse> login() async {
+    ref.read(authStatusProvider.notifier).state = AuthStatus.authenticating;
     try {
-      _user = await account.get();
-      _session = await account.getSession(sessionId: 'current');
-    } catch (e) {
-      _handleError(e, 'Auth state check failed');
-    } finally {
-      _setLoading(false);
-    }
-  }
+      final issuer = await Issuer.discover(discoveryUrl);
+      final client = Client(issuer, clientId);
 
-  /// Centralized error handling method.
-  void _handleError(dynamic error, String operation) {
-    _error = error.toString();
-    debugPrint('$operation: $_error');
-  }
+      // launch auth in external browser
+      Future<void> urlLauncher(String url) async {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          throw Exception('Could not launch $url');
+        }
+      }
 
-  /// Sets the loading state and notifies listeners.
-  void _setLoading(bool loading) {
-    _isLoading = loading;
-    if (loading) _error = null;
-    notifyListeners();
-  }
+      final port = Uri.tryParse(redirectUri)?.port ?? 4000;
 
-  /// Signs in a user with email and password.
-  ///
-  /// Returns true if successful, false if not.
-  Future<bool> signIn({required String email, required String password}) async {
-    _setLoading(true);
-    try {
-      _session = await account.createEmailPasswordSession(
-        email: email,
-        password: password,
+      final authenticator = Authenticator(
+        client,
+        scopes: scopes,
+        port: port,
+        urlLancher: urlLauncher,
       );
-      _user = await account.get();
-      return true;
+
+      final credential = await authenticator.authorize();
+
+      final response = await credential.getTokenResponse();
+
+      final json = response.toJson();
+      if (json.containsKey('error')) {
+        throw Exception(
+          'Login failed: ${json['error_description'] ?? json['error']}',
+        );
+      }
+
+      await _saveTokens(response);
+      await _saveCredential(credential);
+
+      ref.read(authStatusProvider.notifier).state = AuthStatus.authenticated;
+      return response;
     } catch (e) {
-      _handleError(e, 'Login failed');
-      return false;
-    } finally {
-      _setLoading(false);
+      ref.read(authStatusProvider.notifier).state = AuthStatus.unauthenticated;
+      rethrow;
     }
   }
 
-  /// Registers a new user and signs them in.
-  ///
-  /// Returns true if successful, false if not.
-  Future<bool> signUp({
-    required String email,
-    required String password,
-    required String name,
-  }) async {
-    _setLoading(true);
+  // Refresh tokens via stored Credential. Returns null if we can't refresh.
+  Future<TokenResponse?> refresh() async {
+    final rt = await refreshToken;
+    if (rt == null) return null;
+
+    final credential = await _loadCredential();
+    if (credential == null) return null;
+
     try {
-      final user = await account.create(
-        userId: ID.unique(),
-        email: email,
-        password: password,
-        name: name,
-      );
-      final session = await account.createEmailPasswordSession(
-        email: email,
-        password: password,
-      );
-      await account.createVerification(
-        url: 'https://appwrite.bearmet.al/verify_email',
-      );
-      _user = user;
-      _session = session;
-      return true;
+      // it does it for us, nice
+      final response = await credential.getTokenResponse();
+
+      // resave just in case
+      await _saveTokens(response);
+      await _saveCredential(credential);
+
+      ref.read(authStatusProvider.notifier).state = AuthStatus.authenticated;
+      return response;
     } catch (e) {
-      _handleError(e, 'Sign up failed');
-      return false;
-    } finally {
-      _setLoading(false);
+      // log out because refresh failed (probably revoked/expired tokens)
+      await logout();
+      rethrow;
     }
   }
 
-  /// Signs out the current user and clears state.
-  ///
-  /// Returns true if successful, false if not.
-  Future<bool> signOut() async {
-    if (_user == null) return true;
-    _setLoading(true);
-    try {
-      await account.deleteSession(sessionId: 'current');
-      _user = null;
-      _session = null;
-      return true;
-    } catch (e) {
-      _handleError(e, 'Logout failed');
-      return false;
-    } finally {
-      _setLoading(false);
+  Future<void> _saveTokens(TokenResponse response) async {
+    await storage.write(key: 'access_token', value: response.accessToken);
+
+    // better safe than sorry lol
+    if (response.refreshToken != null) {
+      await storage.write(key: 'refresh_token', value: response.refreshToken);
     }
+
+    await storage.write(
+      key: 'id_token',
+      value: response.idToken.toCompactSerialization(),
+    );
+    await storage.write(
+      key: 'expires_at',
+      value: response.expiresAt?.toUtc().toIso8601String(),
+    );
   }
 
-  /// Refreshes the current user from Appwrite.
-  Future<void> refreshUser() async {
-    if (!isAuthed) return;
-    try {
-      _user = await account.get();
-      notifyListeners();
-    } catch (e) {
-      _handleError(e, 'User refresh failed');
-    }
+  // Store full Credential JSON so we can rebuild it (Credential has no default ctor)
+  Future<void> _saveCredential(Credential credential) async {
+    final map = credential.toJson();
+    await storage.write(key: 'credential', value: jsonEncode(map));
+  }
+
+  Future<Credential?> _loadCredential() async {
+    final jsonStr = await storage.read(key: 'credential');
+    if (jsonStr == null) return null;
+
+    final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+    return Credential.fromJson(map);
+  }
+
+  Future<String?> get accessToken async => storage.read(key: 'access_token');
+
+  Future<String?> get refreshToken async => storage.read(key: 'refresh_token');
+
+  Future<String?> get idToken async => storage.read(key: 'id_token');
+
+  Future<DateTime?> get expiresAt async {
+    final str = await storage.read(key: 'expires_at');
+    if (str == null) return null;
+    return DateTime.tryParse(str)?.toUtc();
+  }
+
+  Future<void> logout() async {
+    await storage.deleteAll();
+    ref.read(authStatusProvider.notifier).state = AuthStatus.unauthenticated;
   }
 }

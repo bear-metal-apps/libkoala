@@ -1,62 +1,51 @@
 import 'dart:typed_data';
 
-import 'package:appwrite/appwrite.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:libkoala/providers/user_info_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-class ProfilePicture extends StatefulWidget {
+class ProfilePicture extends ConsumerStatefulWidget {
   final double size;
-  final Client client;
   final String? fallbackText;
 
-  const ProfilePicture({
-    super.key,
-    this.size = 16,
-    required this.client,
-    this.fallbackText,
-  });
+  const ProfilePicture({super.key, this.size = 16, this.fallbackText});
 
   @override
-  State<ProfilePicture> createState() => _ProfilePictureState();
+  ConsumerState<ProfilePicture> createState() => _ProfilePictureState();
 }
 
-class _ProfilePictureState extends State<ProfilePicture> {
-  late Future<Uint8List> _future;
+class _ProfilePictureState extends ConsumerState<ProfilePicture> {
+  late Future<Uint8List?> _future;
 
   @override
   void initState() {
     super.initState();
-    _future = Avatars(widget.client).getInitials(height: 192);
+    _future = _getProfilePhoto();
   }
 
-  @override
-  void didUpdateWidget(ProfilePicture oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.client != widget.client) {
-      _future = Avatars(widget.client).getInitials(height: 192);
-    }
+  Future<Uint8List?> _getProfilePhoto() async {
+    final userInfo = await ref.read(userInfoProvider.future);
+    return userInfo.profilePhoto;
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Uint8List>(
+    return FutureBuilder<Uint8List?>(
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          // They see me loadin'
           return SizedBox(
-            width: widget.size * 2, // x2 because CircleAvatar uses radius
-            height: widget.size * 2, // same here
+            width: widget.size * 2,
+            height: widget.size * 2,
             child: CircularProgressIndicator(),
           );
-        } else if (snapshot.hasData) {
-          // Show profile picture
+        } else if (snapshot.hasData && snapshot.data != null) {
           return CircleAvatar(
             radius: widget.size,
             backgroundImage: MemoryImage(snapshot.data!),
           );
         } else {
-          // Show error icon if we can't load the picture (typically due to being a guest)
           return CircleAvatar(
             radius: widget.size,
             backgroundColor: Theme.of(context).colorScheme.error,
