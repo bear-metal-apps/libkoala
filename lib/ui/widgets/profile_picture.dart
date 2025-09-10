@@ -5,57 +5,53 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:libkoala/providers/user_info_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-class ProfilePicture extends ConsumerStatefulWidget {
+class ProfilePicture extends ConsumerWidget {
   final double size;
   final String? fallbackText;
 
   const ProfilePicture({super.key, this.size = 16, this.fallbackText});
 
   @override
-  ConsumerState<ProfilePicture> createState() => _ProfilePictureState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncUser = ref.watch(userInfoProvider);
 
-class _ProfilePictureState extends ConsumerState<ProfilePicture> {
-  late Future<Uint8List?> _future;
-
-  @override
-  void initState() {
-    super.initState();
-    _future = _getProfilePhoto();
-  }
-
-  Future<Uint8List?> _getProfilePhoto() async {
-    final userInfo = await ref.read(userInfoProvider.future);
-    return userInfo.profilePhoto;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<Uint8List?>(
-      future: _future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return SizedBox(
-            width: widget.size * 2,
-            height: widget.size * 2,
-            child: CircularProgressIndicator(),
-          );
-        } else if (snapshot.hasData && snapshot.data != null) {
+    return asyncUser.when(
+      loading: () => SizedBox(
+        width: size * 2,
+        height: size * 2,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+      error: (err, stack) => CircleAvatar(
+        radius: size,
+        backgroundColor: Theme.of(context).colorScheme.error,
+        child: Icon(
+          Symbols.error_rounded,
+          size: size,
+          color: Theme.of(context).colorScheme.onError,
+        ),
+      ),
+      data: (user) {
+        final Uint8List? photo = user?.photo;
+        if (photo != null) {
           return CircleAvatar(
-            radius: widget.size,
-            backgroundImage: MemoryImage(snapshot.data!),
-          );
-        } else {
-          return CircleAvatar(
-            radius: widget.size,
-            backgroundColor: Theme.of(context).colorScheme.error,
-            child: Icon(
-              Symbols.error_rounded,
-              size: widget.size,
-              color: Theme.of(context).colorScheme.onError,
-            ),
+            radius: size,
+            backgroundImage: MemoryImage(photo),
           );
         }
+
+        final display =
+            fallbackText ??
+            (user?.name?.trim().isNotEmpty == true
+                ? user!.name!.characters.first.toUpperCase()
+                : '?');
+
+        return CircleAvatar(
+          radius: size,
+          child: Text(
+            display,
+            style: TextStyle(fontSize: size * 0.9, fontWeight: FontWeight.w600),
+          ),
+        );
       },
     );
   }
