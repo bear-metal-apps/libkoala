@@ -46,6 +46,7 @@ Auth auth(Ref ref) {
     clientId: clientId,
     redirectUri: redirectUri,
     scopes: scopes,
+    deviceOS: deviceInfo.deviceOS,
   );
 }
 
@@ -56,6 +57,7 @@ class Auth {
   final String clientId;
   final String redirectUri;
   final List<String> scopes;
+  final DeviceOS deviceOS;
 
   Auth({
     required this.ref,
@@ -64,6 +66,7 @@ class Auth {
     required this.clientId,
     required this.redirectUri,
     required this.scopes,
+    required this.deviceOS,
   });
 
   Future<TokenResponse> login() async {
@@ -72,24 +75,32 @@ class Auth {
       final issuer = await Issuer.discover(discoveryUrl);
       final client = Client(issuer, clientId);
 
+      final launchMode = switch (deviceOS) {
+        DeviceOS.android || DeviceOS.ios => LaunchMode.inAppBrowserView,
+        DeviceOS.linux ||
+        DeviceOS.macos ||
+        DeviceOS.windows ||
+        DeviceOS.web => LaunchMode.externalApplication,
+      };
+
       // launch auth in external browser
       Future<void> urlLauncher(String url) async {
         final uri = Uri.parse(url);
         if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          await launchUrl(uri, mode: launchMode);
         } else {
           throw Exception('Could not launch $url');
         }
       }
 
-      final port = Uri.tryParse(redirectUri)?.port ?? 4000;
-
-      final authenticator = Authenticator(
-        client,
-        scopes: scopes,
-        port: port,
-        urlLancher: urlLauncher,
-      );
+      final authenticator = redirectUri.startsWith('http')
+          ? Authenticator(
+              client,
+              scopes: scopes,
+              port: Uri.parse(redirectUri).port,
+              urlLancher: urlLauncher,
+            )
+          : Authenticator(client, scopes: scopes, urlLancher: urlLauncher);
 
       final credential = await authenticator.authorize();
 
