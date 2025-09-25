@@ -4,7 +4,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:libkoala/providers/device_info_provider.dart';
 import 'package:libkoala/providers/secure_storage_provider.dart';
 import 'package:openid_client/openid_client_io.dart';
-import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -12,9 +11,15 @@ part 'auth_provider.g.dart';
 
 enum AuthStatus { authenticated, unauthenticated, authenticating }
 
-final authStatusProvider = StateProvider<AuthStatus>(
-  (ref) => AuthStatus.unauthenticated,
-);
+@riverpod
+class AuthStatusNotifier extends _$AuthStatusNotifier {
+  @override
+  AuthStatus build() => AuthStatus.unauthenticated;
+  
+  void setStatus(AuthStatus status) {
+    state = status;
+  }
+}
 
 @riverpod
 Auth auth(Ref ref) {
@@ -70,7 +75,7 @@ class Auth {
   });
 
   Future<TokenResponse> login() async {
-    ref.read(authStatusProvider.notifier).state = AuthStatus.authenticating;
+    ref.read(authStatusProvider.notifier).setStatus(AuthStatus.authenticating);
     try {
       final issuer = await Issuer.discover(discoveryUrl);
       final client = Client(issuer, clientId);
@@ -116,10 +121,10 @@ class Auth {
       await _saveTokens(response);
       await _saveCredential(credential);
 
-      ref.read(authStatusProvider.notifier).state = AuthStatus.authenticated;
+      ref.read(authStatusProvider.notifier).setStatus(AuthStatus.authenticated);
       return response;
     } catch (e) {
-      ref.read(authStatusProvider.notifier).state = AuthStatus.unauthenticated;
+      ref.read(authStatusProvider.notifier).setStatus(AuthStatus.unauthenticated);
       rethrow;
     }
   }
@@ -140,7 +145,7 @@ class Auth {
       await _saveTokens(response);
       await _saveCredential(credential);
 
-      ref.read(authStatusProvider.notifier).state = AuthStatus.authenticated;
+      ref.read(authStatusProvider.notifier).setStatus(AuthStatus.authenticated);
       return response;
     } catch (e) {
       // log out because refresh failed (probably revoked/expired tokens)
@@ -195,6 +200,6 @@ class Auth {
 
   Future<void> logout() async {
     await storage.deleteAll();
-    ref.read(authStatusProvider.notifier).state = AuthStatus.unauthenticated;
+    ref.read(authStatusProvider.notifier).setStatus(AuthStatus.unauthenticated);
   }
 }
