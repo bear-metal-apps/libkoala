@@ -2,6 +2,10 @@ library;
 
 export 'providers/auth_provider.dart'
     show authProvider, authStatusProvider, AuthStatus, Auth;
+export 'providers/cached_user_info_provider.dart' 
+    show cachedUserInfoProvider, clearUserInfoCacheProvider;
+export 'providers/data_cache_provider.dart' show dataCacheProvider;
+export 'providers/database_provider.dart' show databaseProvider;
 export 'providers/device_info_provider.dart'
     show deviceInfoProvider, DeviceInfo, DeviceOS;
 export 'providers/secure_storage_provider.dart' show secureStorageProvider;

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:libkoala/providers/cached_user_info_provider.dart';
 import 'package:libkoala/providers/device_info_provider.dart';
 import 'package:libkoala/providers/secure_storage_provider.dart';
 import 'package:openid_client/openid_client_io.dart';
@@ -200,6 +201,10 @@ class Auth {
 
   Future<void> logout() async {
     await storage.deleteAll();
+    
+    // Clear cached user info
+    await ref.read(clearUserInfoCacheProvider.future);
+    
     ref.read(authStatusProvider.notifier).setStatus(AuthStatus.unauthenticated);
   }
 }
