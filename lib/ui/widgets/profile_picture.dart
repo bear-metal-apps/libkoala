@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:libkoala/providers/cached_user_info_provider.dart';
+import 'package:libkoala/providers/user_info_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 class ProfilePicture extends ConsumerWidget {
@@ -13,7 +13,7 @@ class ProfilePicture extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncUser = ref.watch(cachedUserInfoProvider);
+    final asyncUser = ref.watch(userInfoProvider);
 
     return asyncUser.when(
       loading: () => SizedBox(
