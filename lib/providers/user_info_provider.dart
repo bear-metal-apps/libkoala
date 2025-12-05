@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:libkoala/providers/auth_provider.dart';
-import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'user_info_provider.g.dart';
@@ -12,10 +12,11 @@ part 'user_info_provider.g.dart';
 Future<UserInfo?> userInfo(Ref ref) async {
   final auth = ref.read(authProvider);
   final authStatus = ref.watch(authStatusProvider);
-
+  
   if (authStatus != AuthStatus.authenticated) return null;
-
-  final accessToken = await auth.accessToken ?? '';
+  
+  final accessToken = await auth.getAccessToken(['User.Read']);
+  if (accessToken == null) return null;
 
   final headers = {'Authorization': 'Bearer $accessToken'};
 

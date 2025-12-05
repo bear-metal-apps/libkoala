@@ -6,22 +6,99 @@ part of 'auth_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$authHash() => r'24b97f05e93f5e043acccf5728cc02095e702c9d';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [auth].
+@ProviderFor(AuthStatusNotifier)
+const authStatusProvider = AuthStatusNotifierProvider._();
+
+final class AuthStatusNotifierProvider
+    extends $NotifierProvider<AuthStatusNotifier, AuthStatus> {
+  const AuthStatusNotifierProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'authStatusProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$authStatusNotifierHash();
+
+  @$internal
+  @override
+  AuthStatusNotifier create() => AuthStatusNotifier();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AuthStatus value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AuthStatus>(value),
+    );
+  }
+}
+
+String _$authStatusNotifierHash() =>
+    r'73818f3668788290784baacc503eff0486e424d6';
+
+abstract class _$AuthStatusNotifier extends $Notifier<AuthStatus> {
+  AuthStatus build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<AuthStatus, AuthStatus>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AuthStatus, AuthStatus>,
+              AuthStatus,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}
+
 @ProviderFor(auth)
-final authProvider = AutoDisposeProvider<Auth>.internal(
-  auth,
-  name: r'authProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$authHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const authProvider = AuthProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef AuthRef = AutoDisposeProviderRef<Auth>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class AuthProvider extends $FunctionalProvider<Auth, Auth, Auth>
+    with $Provider<Auth> {
+  const AuthProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'authProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$authHash();
+
+  @$internal
+  @override
+  $ProviderElement<Auth> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  Auth create(Ref ref) {
+    return auth(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Auth value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Auth>(value),
+    );
+  }
+}
+
+String _$authHash() => r'5d21a657925b6327a84cef7d6afb70509c259958';
