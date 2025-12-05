@@ -1,9 +1,11 @@
 library;
 
+export 'providers/api_key_provider.dart' show getApiKeyProvider;
 export 'providers/auth_provider.dart'
-    show authProvider, authStatusProvider, AuthStatus, loginMutation, refreshMutation, Auth;
+    show authProvider, authStatusProvider, AuthStatus, Auth;
 export 'providers/device_info_provider.dart'
     show deviceInfoProvider, DeviceInfo, DeviceOS;
+export 'providers/graphql_provider.dart' show graphqlProvider;
 export 'providers/secure_storage_provider.dart' show secureStorageProvider;
 export 'providers/user_info_provider.dart' show userInfoProvider, UserInfo;
 export 'ui/widgets/profile_picture.dart' show ProfilePicture;
