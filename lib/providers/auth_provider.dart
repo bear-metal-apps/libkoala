@@ -33,7 +33,7 @@ Auth auth(Ref ref) {
     redirectUri = 'msauth.org.tahomarobotics.beariscope://auth';
   } else if (deviceInfo.deviceOS == DeviceOS.android) {
     redirectUri =
-    'msauth://org.tahomarobotics.beariscope/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D';
+        'msauth://org.tahomarobotics.beariscope/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D';
   } else {
     redirectUri = 'http://localhost:4000';
   }
@@ -101,7 +101,11 @@ class Auth {
 
     try {
       final client = await _getClient();
-      final newResponse = await _manualRefresh(client, refreshToken, targetScopes);
+      final newResponse = await _manualRefresh(
+        client,
+        refreshToken,
+        targetScopes,
+      );
 
       _cacheToken(newResponse, targetScopes);
 
@@ -137,11 +141,11 @@ class Auth {
 
       final authenticator = redirectUri.startsWith('http')
           ? Authenticator(
-        client,
-        scopes: scopes,
-        port: Uri.parse(redirectUri).port,
-        urlLancher: urlLauncher,
-      )
+              client,
+              scopes: scopes,
+              port: Uri.parse(redirectUri).port,
+              urlLancher: urlLauncher,
+            )
           : Authenticator(client, scopes: scopes, urlLancher: urlLauncher);
 
       final credential = await authenticator.authorize();
@@ -164,17 +168,17 @@ class Auth {
     await storage.deleteAll();
     ref.read(authStatusProvider.notifier).setUnauthenticated();
   }
-  
+
   Future<Client> _getClient() async {
     final issuer = await Issuer.discover(discoveryUrl);
     return Client(issuer, clientId);
   }
 
   Future<TokenResponse> _manualRefresh(
-      Client client,
-      String refreshToken,
-      List<String> targetScopes
-      ) async {
+    Client client,
+    String refreshToken,
+    List<String> targetScopes,
+  ) async {
     final tokenEndpoint = client.issuer.metadata.tokenEndpoint;
 
     final response = await http.post(
@@ -208,7 +212,9 @@ class Auth {
   bool _isExpired(TokenResponse response) {
     final expiresAt = response.expiresAt;
     if (expiresAt == null) return true;
-    return DateTime.now().toUtc().isAfter(expiresAt.subtract(const Duration(minutes: 5)));
+    return DateTime.now().toUtc().isAfter(
+      expiresAt.subtract(const Duration(minutes: 5)),
+    );
   }
 
   Future<void> _saveSession(TokenResponse response) async {

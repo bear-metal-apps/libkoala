@@ -14,7 +14,9 @@ Future<String> getApiKey(Ref ref) async {
     {'api-version': '7.4'},
   );
 
-  final String? token = await ref.read(authProvider).getAccessToken(['https://vault.azure.net/user_impersonation']);
+  final String? token = await ref.read(authProvider).getAccessToken([
+    'https://vault.azure.net/user_impersonation',
+  ]);
 
   final request = await http.get(
     uri,

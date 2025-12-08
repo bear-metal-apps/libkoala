@@ -11,9 +11,9 @@ part 'user_info_provider.g.dart';
 Future<UserInfo?> userInfo(Ref ref) async {
   final auth = ref.read(authProvider);
   final authStatus = ref.watch(authStatusProvider);
-  
+
   if (authStatus != AuthStatus.authenticated) return null;
-  
+
   final accessToken = await auth.getAccessToken(['User.Read']);
   if (accessToken == null) return null;
 
