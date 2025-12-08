@@ -6,22 +6,46 @@ part of 'device_info_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$deviceInfoHash() => r'88be4d226aac70bbcb55fa0e90b19f801ff9fbed';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [deviceInfo].
 @ProviderFor(deviceInfo)
-final deviceInfoProvider = AutoDisposeProvider<DeviceInfo>.internal(
-  deviceInfo,
-  name: r'deviceInfoProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$deviceInfoHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const deviceInfoProvider = DeviceInfoProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef DeviceInfoRef = AutoDisposeProviderRef<DeviceInfo>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class DeviceInfoProvider
+    extends $FunctionalProvider<DeviceInfo, DeviceInfo, DeviceInfo>
+    with $Provider<DeviceInfo> {
+  const DeviceInfoProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'deviceInfoProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$deviceInfoHash();
+
+  @$internal
+  @override
+  $ProviderElement<DeviceInfo> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  DeviceInfo create(Ref ref) {
+    return deviceInfo(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DeviceInfo value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DeviceInfo>(value),
+    );
+  }
+}
+
+String _$deviceInfoHash() => r'7a525189e33114a1d6d8c2d22e3203c157a240a9';
