@@ -1,8 +1,5 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 part 'device_info_provider.g.dart';
 
@@ -11,22 +8,22 @@ DeviceInfo deviceInfo(Ref ref) {
   final DevicePlatform devicePlatform;
   final DeviceOS deviceOS;
 
-  if (kIsWeb) {
+  if (UniversalPlatform.isWeb) {
     devicePlatform = DevicePlatform.web;
     deviceOS = DeviceOS.web;
-  } else if (Platform.isAndroid) {
+  } else if (UniversalPlatform.isAndroid) {
     devicePlatform = DevicePlatform.mobile;
     deviceOS = DeviceOS.android;
-  } else if (Platform.isIOS) {
+  } else if (UniversalPlatform.isIOS) {
     devicePlatform = DevicePlatform.mobile;
     deviceOS = DeviceOS.ios;
-  } else if (Platform.isWindows) {
+  } else if (UniversalPlatform.isWindows) {
     devicePlatform = DevicePlatform.desktop;
     deviceOS = DeviceOS.windows;
-  } else if (Platform.isLinux) {
+  } else if (UniversalPlatform.isLinux) {
     devicePlatform = DevicePlatform.desktop;
     deviceOS = DeviceOS.linux;
-  } else if (Platform.isMacOS) {
+  } else if (UniversalPlatform.isMacOS) {
     devicePlatform = DevicePlatform.desktop;
     deviceOS = DeviceOS.macos;
   } else {

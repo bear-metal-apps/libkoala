@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:libkoala/providers/auth_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';

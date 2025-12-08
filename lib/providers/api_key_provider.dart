@@ -10,7 +10,7 @@ part 'api_key_provider.g.dart';
 Future<String> getApiKey(Ref ref) async {
   final Uri uri = Uri.https(
     'bearnet-key.vault.azure.net',
-    '/secrets/bearnet-function-key/9c70a1025b164d6e9d50ef580fe442d5',
+    '/secrets/bearnet-function-key',
     {'api-version': '7.4'},
   );
 

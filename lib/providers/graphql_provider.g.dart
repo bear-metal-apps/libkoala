@@ -13,8 +13,13 @@ part of 'graphql_provider.dart';
 const graphqlProvider = GraphqlProvider._();
 
 final class GraphqlProvider
-    extends $FunctionalProvider<GraphQLClient, GraphQLClient, GraphQLClient>
-    with $Provider<GraphQLClient> {
+    extends
+        $FunctionalProvider<
+          AsyncValue<GraphQLClient>,
+          GraphQLClient,
+          FutureOr<GraphQLClient>
+        >
+    with $FutureModifier<GraphQLClient>, $FutureProvider<GraphQLClient> {
   const GraphqlProvider._()
     : super(
         from: null,
@@ -31,21 +36,14 @@ final class GraphqlProvider
 
   @$internal
   @override
-  $ProviderElement<GraphQLClient> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $FutureProviderElement<GraphQLClient> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
 
   @override
-  GraphQLClient create(Ref ref) {
+  FutureOr<GraphQLClient> create(Ref ref) {
     return graphql(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(GraphQLClient value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<GraphQLClient>(value),
-    );
   }
 }
 
-String _$graphqlHash() => r'473ba77e96076bece3c3d9c0e2e9d913eff808bd';
+String _$graphqlHash() => r'19f184d2d4e10e2fad0cbf491690301cc1eb37ed';

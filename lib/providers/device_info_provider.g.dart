@@ -48,4 +48,4 @@ final class DeviceInfoProvider
   }
 }
 
-String _$deviceInfoHash() => r'389ea78d0e84c7979345b2015e10dcc168fe8484';
+String _$deviceInfoHash() => r'7a525189e33114a1d6d8c2d22e3203c157a240a9';

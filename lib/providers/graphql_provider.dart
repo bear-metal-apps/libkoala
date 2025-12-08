@@ -5,11 +5,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'graphql_provider.g.dart';
 
 @Riverpod(keepAlive: true)
-GraphQLClient graphql(Ref ref) {
-  ref.read(getApiKeyProvider).value;
+Future<GraphQLClient> graphql(Ref ref) async {
+  final apiKey = await ref.watch(getApiKeyProvider.future);
   final link = HttpLink(
     "https://bearnet-fwgjeng4hxbshzhw.westus2-01.azurewebsites.net/api/graphql",
-    defaultHeaders: {"X-Api-Key": ref.read(getApiKeyProvider).value ?? ""},
+    defaultHeaders: {"X-Api-Key": apiKey},
   );
 
   return GraphQLClient(
