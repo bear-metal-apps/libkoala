@@ -41,7 +41,7 @@ Auth auth(Ref ref) {
     DeviceOS.web =>
     'https://scout.bearmet.al/auth.html',
     DeviceOS.windows || DeviceOS.linux =>
-    'http://localhost:0/auth',
+    'http://localhost:4000/auth',
   };
 
   return Auth(
