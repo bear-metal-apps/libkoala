@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
@@ -12,20 +13,39 @@ import 'package:libkoala/providers/secure_storage_provider.dart';
 
 part 'auth_provider.g.dart';
 
-enum AuthStatus {
-  authenticated,
-  unauthenticated,
-  authenticating,
-}
+enum AuthStatus { authenticated, unauthenticated, authenticating }
 
 @Riverpod(keepAlive: true)
-class AuthStatusNotifier extends _$AuthStatusNotifier {
+class AuthStatusNotifier extends _$AuthStatusNotifier implements Listenable {
+  VoidCallback? _routerListener;
+
   @override
   AuthStatus build() => AuthStatus.unauthenticated;
 
-  void setAuthenticating() => state = AuthStatus.authenticating;
-  void setAuthenticated() => state = AuthStatus.authenticated;
-  void setUnauthenticated() => state = AuthStatus.unauthenticated;
+  void setAuthenticating() {
+    state = AuthStatus.authenticating;
+    notify();
+  }
+
+  void setAuthenticated() {
+    state = AuthStatus.authenticated;
+    notify();
+  }
+
+  void setUnauthenticated() {
+    state = AuthStatus.unauthenticated;
+    notify();
+  }
+
+  void notify() => _routerListener?.call();
+
+  @override
+  void addListener(VoidCallback listener) => _routerListener = listener;
+
+  @override
+  void removeListener(VoidCallback listener) {
+    if (_routerListener == listener) _routerListener = null;
+  }
 }
 
 @Riverpod(keepAlive: true)
@@ -34,21 +54,15 @@ Auth auth(Ref ref) {
   final deviceInfo = ref.watch(deviceInfoProvider);
 
   final redirectUri = switch (deviceInfo.deviceOS) {
-    DeviceOS.ios || DeviceOS.macos =>
-    'msauth.org.tahomarobotics.beariscope://auth',
+    DeviceOS.ios ||
+    DeviceOS.macos => 'msauth.org.tahomarobotics.beariscope://auth',
     DeviceOS.android =>
-    'msauth://org.tahomarobotics.beariscope/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D',
-    DeviceOS.web =>
-    'https://scout.bearmet.al/auth.html',
-    DeviceOS.windows || DeviceOS.linux =>
-    'http://localhost:4000/auth',
+      'msauth://org.tahomarobotics.beariscope/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D',
+    DeviceOS.web => 'https://scout.bearmet.al/auth.html',
+    DeviceOS.windows || DeviceOS.linux => 'http://localhost:4000/auth',
   };
 
-  return Auth(
-    ref: ref,
-    storage: storage,
-    redirectUri: redirectUri,
-  );
+  return Auth(ref: ref, storage: storage, redirectUri: redirectUri);
 }
 
 const _tenantId = '9bc79ca8-229e-4f3d-990c-300c8407fe5d';
@@ -73,18 +87,16 @@ class OAuthToken {
     this.refreshToken,
   });
 
-  bool get isExpired =>
-      DateTime.now().toUtc().isAfter(
-        expiresAt.subtract(const Duration(minutes: 5)),
-      );
+  bool get isExpired => DateTime.now().toUtc().isAfter(
+    expiresAt.subtract(const Duration(minutes: 5)),
+  );
 
   factory OAuthToken.fromJson(Map<String, dynamic> json) {
     final expiresIn = json['expires_in'] as int;
     return OAuthToken(
       accessToken: json['access_token'] as String,
       refreshToken: json['refresh_token'] as String?,
-      expiresAt:
-      DateTime.now().toUtc().add(Duration(seconds: expiresIn)),
+      expiresAt: DateTime.now().toUtc().add(Duration(seconds: expiresIn)),
     );
   }
 }
@@ -96,12 +108,8 @@ class Auth {
 
   OAuthToken? _currentToken;
 
-  Auth({
-    required this.ref,
-    required this.storage,
-    required this.redirectUri,
-  });
-  
+  Auth({required this.ref, required this.storage, required this.redirectUri});
+
   Future<void> login(List<String> scopes) async {
     ref.read(authStatusProvider.notifier).setAuthenticating();
 
@@ -109,18 +117,23 @@ class Auth {
       final verifier = _generateCodeVerifier();
       final challenge = _codeChallenge(verifier);
 
-      final authUri = _authorizeEndpoint.replace(queryParameters: {
-        'client_id': _clientId,
-        'response_type': 'code',
-        'redirect_uri': redirectUri,
-        'scope': scopes.join(' '),
-        'code_challenge': challenge,
-        'code_challenge_method': 'S256',
-      });
+      final authUri = _authorizeEndpoint.replace(
+        queryParameters: {
+          'client_id': _clientId,
+          'response_type': 'code',
+          'redirect_uri': redirectUri,
+          'scope': scopes.join(' '),
+          'code_challenge': challenge,
+          'code_challenge_method': 'S256',
+        },
+      );
+
+      final uri = Uri.parse(redirectUri);
 
       final result = await FlutterWebAuth2.authenticate(
         url: authUri.toString(),
-        callbackUrlScheme: Uri.parse(redirectUri).scheme,
+        callbackUrlScheme: uri.host == 'localhost' ? redirectUri : uri.scheme,
+        options: const FlutterWebAuth2Options(useWebview: false),
       );
 
       final code = Uri.parse(result).queryParameters['code'];
@@ -154,16 +167,14 @@ class Auth {
     _currentToken = token;
 
     if (token.refreshToken != null) {
-      await storage.write(
-        key: _refreshTokenKey,
-        value: token.refreshToken,
-      );
+      await storage.write(key: _refreshTokenKey, value: token.refreshToken);
     }
 
     return token.accessToken;
   }
 
   Future<void> trySilentLogin() async {
+    ref.read(authStatusProvider.notifier).setAuthenticating();
     final refreshToken = await storage.read(key: _refreshTokenKey);
     if (refreshToken == null) {
       ref.read(authStatusProvider.notifier).setUnauthenticated();
@@ -183,11 +194,8 @@ class Auth {
     await storage.deleteAll();
     ref.read(authStatusProvider.notifier).setUnauthenticated();
   }
-  
-  Future<OAuthToken> _exchangeCode(
-      String code,
-      String verifier,
-      ) async {
+
+  Future<OAuthToken> _exchangeCode(String code, String verifier) async {
     final response = await http.post(
       _tokenEndpoint,
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -208,9 +216,9 @@ class Auth {
   }
 
   Future<OAuthToken> _refreshToken(
-      String refreshToken,
-      List<String> scopes,
-      ) async {
+    String refreshToken,
+    List<String> scopes,
+  ) async {
     final response = await http.post(
       _tokenEndpoint,
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -228,26 +236,20 @@ class Auth {
 
     return OAuthToken.fromJson(jsonDecode(response.body));
   }
-  
+
   static const _refreshTokenKey = 'refresh_token';
 
   Future<void> _persistSession(OAuthToken token) async {
     if (token.refreshToken != null) {
-      await storage.write(
-        key: _refreshTokenKey,
-        value: token.refreshToken,
-      );
+      await storage.write(key: _refreshTokenKey, value: token.refreshToken);
     }
   }
-  
+
   String _generateCodeVerifier() {
     const chars =
         'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
     final rand = Random.secure();
-    return List.generate(
-      64,
-          (_) => chars[rand.nextInt(chars.length)],
-    ).join();
+    return List.generate(64, (_) => chars[rand.nextInt(chars.length)]).join();
   }
 
   String _codeChallenge(String verifier) {

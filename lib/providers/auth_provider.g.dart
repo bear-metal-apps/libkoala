@@ -42,7 +42,7 @@ final class AuthStatusNotifierProvider
 }
 
 String _$authStatusNotifierHash() =>
-    r'73818f3668788290784baacc503eff0486e424d6';
+    r'e7865e0c423e2441860e96c59900f8262b82c5c8';
 
 abstract class _$AuthStatusNotifier extends $Notifier<AuthStatus> {
   AuthStatus build();
@@ -63,22 +63,11 @@ abstract class _$AuthStatusNotifier extends $Notifier<AuthStatus> {
   }
 }
 
-/// --------------------
-/// AUTH PROVIDER
-/// --------------------
-
 @ProviderFor(auth)
 const authProvider = AuthProvider._();
 
-/// --------------------
-/// AUTH PROVIDER
-/// --------------------
-
 final class AuthProvider extends $FunctionalProvider<Auth, Auth, Auth>
     with $Provider<Auth> {
-  /// --------------------
-  /// AUTH PROVIDER
-  /// --------------------
   const AuthProvider._()
     : super(
         from: null,
@@ -112,4 +101,4 @@ final class AuthProvider extends $FunctionalProvider<Auth, Auth, Auth>
   }
 }
 
-String _$authHash() => r'60e5d8decd5e47f5ebbefce83e0aded0d0017a7d';
+String _$authHash() => r'19fc96aa53622dd257ae888cb8b0fdbe670d37cb';
