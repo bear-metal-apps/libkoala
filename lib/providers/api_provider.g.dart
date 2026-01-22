@@ -47,7 +47,7 @@ final class DioProvider extends $FunctionalProvider<Dio, Dio, Dio>
   }
 }
 
-String _$dioHash() => r'96a8ec5b5bd68e26771561f6c4c5a184ebcecf85';
+String _$dioHash() => r'a87fda2698f6ed56419ea101c507cb0312a9cad3';
 
 @ProviderFor(getData)
 const getDataProvider = GetDataFamily._();
@@ -110,7 +110,7 @@ final class GetDataProvider
   }
 }
 
-String _$getDataHash() => r'8dcab46fc866b40b156b1356dfe3ddf025d14a99';
+String _$getDataHash() => r'98b17d61608fa54b3c4d64fe54fb7297d8873868';
 
 final class GetDataFamily extends $Family
     with
@@ -196,7 +196,7 @@ final class GetListDataProvider
   }
 }
 
-String _$getListDataHash() => r'6795f96c3903764949cb66add4c43155c3979d1f';
+String _$getListDataHash() => r'f8453b1f8bae70d8399c0d7384d907bf753deb01';
 
 final class GetListDataFamily extends $Family
     with

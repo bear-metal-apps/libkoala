@@ -27,8 +27,8 @@ class HiveCacheInterceptor extends Interceptor {
           final normalized = cachedData is Map
               ? Map<String, dynamic>.from(cachedData)
               : cachedData is List
-                  ? List<dynamic>.from(cachedData)
-                  : cachedData;
+              ? List<dynamic>.from(cachedData)
+              : cachedData;
 
           return handler.resolve(
             Response(
