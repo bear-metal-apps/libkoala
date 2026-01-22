@@ -15,7 +15,6 @@ Future<UserInfo?> userInfo(Ref ref) async {
   if (authStatus != AuthStatus.authenticated) return null;
 
   final accessToken = await auth.getAccessToken(['User.Read']);
-  if (accessToken == null) return null;
 
   final headers = {'Authorization': 'Bearer $accessToken'};
 

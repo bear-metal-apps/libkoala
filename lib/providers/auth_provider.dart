@@ -1,25 +1,56 @@
-import 'dart:async';
 import 'dart:convert';
-import 'package:http/http.dart' as http; // Required for manual refresh
+import 'dart:math';
 
+import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+import 'package:http/http.dart' as http;
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import 'package:libkoala/providers/device_info_provider.dart';
 import 'package:libkoala/providers/secure_storage_provider.dart';
-import 'package:openid_client/openid_client_io.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 part 'auth_provider.g.dart';
+
+const _tenantId = '9bc79ca8-229e-4f3d-990c-300c8407fe5d';
+const _clientId = 'c001bbf4-138d-430c-861a-a83535463a53';
+const _refreshTokenKey = 'refresh_token';
+
+final _authorizeEndpoint = Uri.parse(
+  'https://login.microsoftonline.com/$_tenantId/oauth2/v2.0/authorize',
+);
+
+final _tokenEndpoint = Uri.parse(
+  'https://login.microsoftonline.com/$_tenantId/oauth2/v2.0/token',
+);
 
 enum AuthStatus { authenticated, unauthenticated, authenticating }
 
 @Riverpod(keepAlive: true)
-class AuthStatusNotifier extends _$AuthStatusNotifier {
+class AuthStatusNotifier extends _$AuthStatusNotifier implements Listenable {
+  VoidCallback? _routerListener;
+
   @override
   AuthStatus build() => AuthStatus.unauthenticated;
-  void setAuthenticating() => state = AuthStatus.authenticating;
-  void setAuthenticated() => state = AuthStatus.authenticated;
-  void setUnauthenticated() => state = AuthStatus.unauthenticated;
+
+  void setStatus(AuthStatus status) {
+    if (state != status) {
+      state = status;
+      notify();
+    }
+  }
+
+  void notify() => _routerListener?.call();
+
+  @override
+  void addListener(VoidCallback listener) => _routerListener = listener;
+
+  @override
+  void removeListener(VoidCallback listener) {
+    if (_routerListener == listener) _routerListener = null;
+  }
 }
 
 @Riverpod(keepAlive: true)
@@ -27,215 +58,236 @@ Auth auth(Ref ref) {
   final storage = ref.watch(secureStorageProvider);
   final deviceInfo = ref.watch(deviceInfoProvider);
 
-  final String redirectUri;
-  if (deviceInfo.deviceOS == DeviceOS.ios ||
-      deviceInfo.deviceOS == DeviceOS.macos) {
-    redirectUri = 'msauth.org.tahomarobotics.beariscope://auth';
-  } else if (deviceInfo.deviceOS == DeviceOS.android) {
-    redirectUri =
-        'msauth://org.tahomarobotics.beariscope/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D';
-  } else {
-    redirectUri = 'http://localhost:4000';
-  }
+  final redirectUri = switch (deviceInfo.deviceOS) {
+    DeviceOS.ios ||
+    DeviceOS.macos => 'msauth.org.tahomarobotics.beariscope://auth',
+    DeviceOS.android =>
+      'msauth://org.tahomarobotics.beariscope/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D',
+    DeviceOS.web => 'https://scout.bearmet.al/auth.html',
+    DeviceOS.windows || DeviceOS.linux => 'http://localhost:4000/auth',
+  };
 
-  final discoveryUrl = Uri.parse(
-    'https://login.microsoftonline.com/9bc79ca8-229e-4f3d-990c-300c8407fe5d/v2.0/',
-  );
-  const clientId = 'c001bbf4-138d-430c-861a-a83535463a53';
-
-  // the scopes we want consent for, not what we're actively getting
-  const scopes = [
-    'openid',
-    'profile',
-    'email',
-    'offline_access',
-    'User.Read',
-    'https://vault.azure.net/user_impersonation',
-  ];
-
-  return Auth(
-    ref: ref,
-    storage: storage,
-    discoveryUrl: discoveryUrl,
-    clientId: clientId,
-    redirectUri: redirectUri,
-    scopes: scopes,
-    deviceOS: deviceInfo.deviceOS,
-  );
+  return Auth(ref: ref, storage: storage, redirectUri: redirectUri);
 }
 
 class Auth {
   final Ref ref;
   final FlutterSecureStorage storage;
-  final Uri discoveryUrl;
-  final String clientId;
   final String redirectUri;
-  final List<String> scopes;
-  final DeviceOS deviceOS;
 
-  final Map<String, TokenResponse> _tokenCache = {};
+  // Cache tokens by their scope string so we don't mix Graph tokens with API tokens
+  final Map<String, OAuthToken> _tokenCache = {};
 
-  Auth({
-    required this.ref,
-    required this.storage,
-    required this.discoveryUrl,
-    required this.clientId,
-    required this.redirectUri,
-    required this.scopes,
-    required this.deviceOS,
-  });
+  Auth({required this.ref, required this.storage, required this.redirectUri});
 
-  Future<String?> getAccessToken(List<String> targetScopes) async {
-    final key = _scopesToKey(targetScopes);
+  /// Starts the interactive login flow.
+  Future<void> login(List<String> scopes) async {
+    _setStatus(AuthStatus.authenticating);
 
-    final cached = _tokenCache[key];
-    if (cached != null && !_isExpired(cached)) {
+    try {
+      // 1. Prepare PKCE
+      final verifier = _generateCodeVerifier();
+      final challenge = _codeChallenge(verifier);
+
+      // 2. Ensure we get a Refresh Token by asking for offline_access
+      final requestScopes = {
+        ...scopes,
+        'offline_access',
+        'openid',
+        'profile',
+      }.join(' ');
+
+      // 3. Build Auth URL
+      final authUrl = _authorizeEndpoint.replace(
+        queryParameters: {
+          'client_id': _clientId,
+          'response_type': 'code',
+          'redirect_uri': redirectUri,
+          'scope': requestScopes,
+          'code_challenge': challenge,
+          'code_challenge_method': 'S256',
+          // Optional: Force account selection if needed
+          // 'prompt': 'select_account',
+        },
+      );
+
+      // 4. Trigger Web Auth
+      final result = await FlutterWebAuth2.authenticate(
+        url: authUrl.toString(),
+        callbackUrlScheme: Uri.parse(redirectUri).scheme,
+        options: const FlutterWebAuth2Options(useWebview: false),
+      );
+
+      // 5. Extract Code
+      final code = Uri.parse(result).queryParameters['code'];
+      if (code == null) throw Exception('No authorization code received');
+
+      // 6. Exchange Code for Token
+      final token = await _exchangeCode(code, verifier);
+
+      // 7. Save Session
+      await _persistRefreshToken(token.refreshToken);
+
+      // Cache this initial token for the scopes we requested
+      _tokenCache[scopes.join(' ')] = token;
+
+      _setStatus(AuthStatus.authenticated);
+    } catch (e) {
+      debugPrint('Login Error: $e');
+      _setStatus(AuthStatus.unauthenticated);
+      rethrow;
+    }
+  }
+
+  /// Returns a valid Access Token for the specific scopes requested.
+  /// If the cached token is expired or for a different scope, it refreshes automatically.
+  Future<String> getAccessToken(List<String> scopes) async {
+    final scopeKey = scopes.join(' ');
+
+    // 1. Check Memory Cache
+    final cached = _tokenCache[scopeKey];
+    if (cached != null && !cached.isExpired) {
       return cached.accessToken;
     }
 
-    final refreshToken = await storage.read(key: 'refresh_token');
+    // 2. Retrieve Persisted Refresh Token
+    final refreshToken = await storage.read(key: _refreshTokenKey);
     if (refreshToken == null) {
       await logout();
-      throw Exception('User not logged in');
+      throw Exception('Session expired (No refresh token)');
     }
 
+    // 3. Fetch New Access Token using Refresh Token
     try {
-      final client = await _getClient();
-      final newResponse = await _manualRefresh(
-        client,
-        refreshToken,
-        targetScopes,
-      );
+      final newToken = await _fetchNewToken(refreshToken, scopes);
 
-      _cacheToken(newResponse, targetScopes);
-
-      if (newResponse.refreshToken != null) {
-        await _saveSession(newResponse);
+      // Update Refresh Token if the server rotated it
+      if (newToken.refreshToken != null) {
+        await _persistRefreshToken(newToken.refreshToken);
       }
 
-      return newResponse.accessToken;
+      // Update Cache
+      _tokenCache[scopeKey] = newToken;
+
+      return newToken.accessToken;
     } catch (e) {
+      // If refresh fails (revoked, expired), log out
       await logout();
       throw Exception('Failed to refresh token: $e');
     }
   }
 
-  Future<TokenResponse> login() async {
-    ref.read(authStatusProvider.notifier).setAuthenticating();
-    try {
-      final client = await _getClient();
+  /// Checks if a valid session exists silently on app start.
+  Future<void> trySilentLogin() async {
+    _setStatus(AuthStatus.authenticating);
 
-      final launchMode = switch (deviceOS) {
-        DeviceOS.android || DeviceOS.ios => LaunchMode.inAppBrowserView,
-        _ => LaunchMode.externalApplication,
-      };
+    final refreshToken = await storage.read(key: _refreshTokenKey);
 
-      Future<void> urlLauncher(String url) async {
-        final uri = Uri.parse(url);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: launchMode);
-        } else {
-          throw Exception('Could not launch $url');
-        }
+    if (refreshToken != null) {
+      try {
+        // Just verify we can get a basic token (e.g., for Graph/Profile)
+        await getAccessToken(['User.Read']);
+        _setStatus(AuthStatus.authenticated);
+      } catch (_) {
+        // Refresh token invalid
+        await logout();
       }
-
-      final authenticator = redirectUri.startsWith('http')
-          ? Authenticator(
-              client,
-              scopes: scopes,
-              port: Uri.parse(redirectUri).port,
-              urlLancher: urlLauncher,
-            )
-          : Authenticator(client, scopes: scopes, urlLancher: urlLauncher);
-
-      final credential = await authenticator.authorize();
-      final response = await credential.getTokenResponse();
-
-      await _saveSession(response);
-
-      // don't cache the initial access token in _tokenCache because we don't know which aud it belongs to
-
-      ref.read(authStatusProvider.notifier).setAuthenticated();
-      return response;
-    } catch (e) {
-      ref.read(authStatusProvider.notifier).setUnauthenticated();
-      rethrow;
+    } else {
+      _setStatus(AuthStatus.unauthenticated);
     }
   }
 
   Future<void> logout() async {
     _tokenCache.clear();
     await storage.deleteAll();
-    ref.read(authStatusProvider.notifier).setUnauthenticated();
+    _setStatus(AuthStatus.unauthenticated);
   }
 
-  Future<Client> _getClient() async {
-    final issuer = await Issuer.discover(discoveryUrl);
-    return Client(issuer, clientId);
+  void _setStatus(AuthStatus status) {
+    ref.read(authStatusProvider.notifier).setStatus(status);
   }
 
-  Future<TokenResponse> _manualRefresh(
-    Client client,
+  Future<void> _persistRefreshToken(String? token) async {
+    if (token != null) {
+      await storage.write(key: _refreshTokenKey, value: token);
+    }
+  }
+
+  Future<OAuthToken> _exchangeCode(String code, String verifier) async {
+    return _postRequest({
+      'client_id': _clientId,
+      'grant_type': 'authorization_code',
+      'code': code,
+      'redirect_uri': redirectUri,
+      'code_verifier': verifier,
+    });
+  }
+
+  Future<OAuthToken> _fetchNewToken(
     String refreshToken,
-    List<String> targetScopes,
+    List<String> scopes,
   ) async {
-    final tokenEndpoint = client.issuer.metadata.tokenEndpoint;
+    return _postRequest({
+      'client_id': _clientId,
+      'grant_type': 'refresh_token',
+      'refresh_token': refreshToken,
+      'scope': scopes.join(' '),
+    });
+  }
 
+  Future<OAuthToken> _postRequest(Map<String, String> body) async {
     final response = await http.post(
-      tokenEndpoint!,
-      body: {
-        'grant_type': 'refresh_token',
-        'refresh_token': refreshToken,
-        'client_id': clientId,
-        'scope': targetScopes.join(' '),
-      },
+      _tokenEndpoint,
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: body,
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Refresh failed: ${response.body}');
+      final error = jsonDecode(response.body);
+      throw Exception(
+        'Auth Error: ${error['error_description'] ?? response.body}',
+      );
     }
 
-    final json = jsonDecode(response.body);
-    return TokenResponse.fromJson(json);
+    return OAuthToken.fromJson(jsonDecode(response.body));
   }
 
-  String _scopesToKey(List<String> s) {
-    final sorted = List<String>.from(s)..sort();
-    return sorted.join(' ');
+  String _generateCodeVerifier() {
+    const chars =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+    final rand = Random.secure();
+    return List.generate(64, (_) => chars[rand.nextInt(chars.length)]).join();
   }
 
-  void _cacheToken(TokenResponse response, List<String> targetScopes) {
-    final key = _scopesToKey(targetScopes);
-    _tokenCache[key] = response;
+  String _codeChallenge(String verifier) {
+    return base64UrlEncode(
+      sha256.convert(utf8.encode(verifier)).bytes,
+    ).replaceAll('=', '');
   }
+}
 
-  bool _isExpired(TokenResponse response) {
-    final expiresAt = response.expiresAt;
-    if (expiresAt == null) return true;
-    return DateTime.now().toUtc().isAfter(
-      expiresAt.subtract(const Duration(minutes: 5)),
+class OAuthToken {
+  final String accessToken;
+  final DateTime expiresAt;
+  final String? refreshToken;
+
+  OAuthToken({
+    required this.accessToken,
+    required this.expiresAt,
+    this.refreshToken,
+  });
+
+  bool get isExpired => DateTime.now().toUtc().isAfter(
+    expiresAt.subtract(const Duration(minutes: 2)), // Buffer time
+  );
+
+  factory OAuthToken.fromJson(Map<String, dynamic> json) {
+    return OAuthToken(
+      accessToken: json['access_token'] as String,
+      refreshToken: json['refresh_token'] as String?,
+      expiresAt: DateTime.now().toUtc().add(
+        Duration(seconds: json['expires_in'] as int),
+      ),
     );
-  }
-
-  Future<void> _saveSession(TokenResponse response) async {
-    if (response.refreshToken != null) {
-      await storage.write(key: 'refresh_token', value: response.refreshToken);
-    }
-    await storage.write(
-      key: 'id_token',
-      value: response.idToken.toCompactSerialization(),
-    );
-  }
-
-  Future<void> trySilentLogin() async {
-    final refreshToken = await storage.read(key: 'refresh_token');
-
-    if (refreshToken != null) {
-      // if we have a refresh token, it's safe to assume the user is logged in
-      ref.read(authStatusProvider.notifier).setAuthenticated();
-    } else {
-      // no token found, user must log in
-      ref.read(authStatusProvider.notifier).setUnauthenticated();
-    }
   }
 }
