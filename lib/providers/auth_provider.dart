@@ -75,21 +75,17 @@ class Auth {
   final FlutterSecureStorage storage;
   final String redirectUri;
 
-  // Cache tokens by their scope string so we don't mix Graph tokens with API tokens
   final Map<String, OAuthToken> _tokenCache = {};
 
   Auth({required this.ref, required this.storage, required this.redirectUri});
 
-  /// Starts the interactive login flow.
   Future<void> login(List<String> scopes) async {
     _setStatus(AuthStatus.authenticating);
 
     try {
-      // 1. Prepare PKCE
       final verifier = _generateCodeVerifier();
       final challenge = _codeChallenge(verifier);
 
-      // 2. Ensure we get a Refresh Token by asking for offline_access
       final requestScopes = {
         ...scopes,
         'offline_access',
@@ -97,7 +93,6 @@ class Auth {
         'profile',
       }.join(' ');
 
-      // 3. Build Auth URL
       final authUrl = _authorizeEndpoint.replace(
         queryParameters: {
           'client_id': _clientId,
@@ -106,29 +101,24 @@ class Auth {
           'scope': requestScopes,
           'code_challenge': challenge,
           'code_challenge_method': 'S256',
-          // Optional: Force account selection if needed
-          // 'prompt': 'select_account',
         },
       );
 
-      // 4. Trigger Web Auth
       final result = await FlutterWebAuth2.authenticate(
         url: authUrl.toString(),
-        callbackUrlScheme: Uri.parse(redirectUri).scheme,
+        callbackUrlScheme: redirectUri == 'http://localhost:4000/auth'
+            ? redirectUri
+            : Uri.parse(redirectUri).scheme,
         options: const FlutterWebAuth2Options(useWebview: false),
       );
 
-      // 5. Extract Code
       final code = Uri.parse(result).queryParameters['code'];
       if (code == null) throw Exception('No authorization code received');
 
-      // 6. Exchange Code for Token
       final token = await _exchangeCode(code, verifier);
 
-      // 7. Save Session
       await _persistRefreshToken(token.refreshToken);
 
-      // Cache this initial token for the scopes we requested
       _tokenCache[scopes.join(' ')] = token;
 
       _setStatus(AuthStatus.authenticated);
@@ -139,45 +129,36 @@ class Auth {
     }
   }
 
-  /// Returns a valid Access Token for the specific scopes requested.
-  /// If the cached token is expired or for a different scope, it refreshes automatically.
   Future<String> getAccessToken(List<String> scopes) async {
     final scopeKey = scopes.join(' ');
 
-    // 1. Check Memory Cache
     final cached = _tokenCache[scopeKey];
     if (cached != null && !cached.isExpired) {
       return cached.accessToken;
     }
 
-    // 2. Retrieve Persisted Refresh Token
     final refreshToken = await storage.read(key: _refreshTokenKey);
     if (refreshToken == null) {
       await logout();
       throw Exception('Session expired (No refresh token)');
     }
 
-    // 3. Fetch New Access Token using Refresh Token
     try {
       final newToken = await _fetchNewToken(refreshToken, scopes);
 
-      // Update Refresh Token if the server rotated it
       if (newToken.refreshToken != null) {
         await _persistRefreshToken(newToken.refreshToken);
       }
 
-      // Update Cache
       _tokenCache[scopeKey] = newToken;
 
       return newToken.accessToken;
     } catch (e) {
-      // If refresh fails (revoked, expired), log out
       await logout();
       throw Exception('Failed to refresh token: $e');
     }
   }
 
-  /// Checks if a valid session exists silently on app start.
   Future<void> trySilentLogin() async {
     _setStatus(AuthStatus.authenticating);
 
@@ -185,11 +166,9 @@ class Auth {
 
     if (refreshToken != null) {
       try {
-        // Just verify we can get a basic token (e.g., for Graph/Profile)
         await getAccessToken(['User.Read']);
         _setStatus(AuthStatus.authenticated);
       } catch (_) {
-        // Refresh token invalid
         await logout();
       }
     } else {

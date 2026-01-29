@@ -1,6 +1,6 @@
 name: libkoala
 description: "Shared Library for Bear Metal Flutter Apps"
-version: 0.0.1
+version: 2.0.0
 
 environment:
   sdk: ^3.8.1
