@@ -10,12 +10,12 @@ part of 'device_info_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(deviceInfo)
-const deviceInfoProvider = DeviceInfoProvider._();
+final deviceInfoProvider = DeviceInfoProvider._();
 
 final class DeviceInfoProvider
     extends $FunctionalProvider<DeviceInfo, DeviceInfo, DeviceInfo>
     with $Provider<DeviceInfo> {
-  const DeviceInfoProvider._()
+  DeviceInfoProvider._()
     : super(
         from: null,
         argument: null,

@@ -10,11 +10,11 @@ part of 'api_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(dio)
-const dioProvider = DioProvider._();
+final dioProvider = DioProvider._();
 
 final class DioProvider extends $FunctionalProvider<Dio, Dio, Dio>
     with $Provider<Dio> {
-  const DioProvider._()
+  DioProvider._()
     : super(
         from: null,
         argument: null,
@@ -50,7 +50,7 @@ final class DioProvider extends $FunctionalProvider<Dio, Dio, Dio>
 String _$dioHash() => r'a87fda2698f6ed56419ea101c507cb0312a9cad3';
 
 @ProviderFor(getData)
-const getDataProvider = GetDataFamily._();
+final getDataProvider = GetDataFamily._();
 
 final class GetDataProvider
     extends
@@ -62,7 +62,7 @@ final class GetDataProvider
     with
         $FutureModifier<Map<String, dynamic>>,
         $FutureProvider<Map<String, dynamic>> {
-  const GetDataProvider._({
+  GetDataProvider._({
     required GetDataFamily super.from,
     required ({String endpoint, bool forceRefresh}) super.argument,
   }) : super(
@@ -118,7 +118,7 @@ final class GetDataFamily extends $Family
           FutureOr<Map<String, dynamic>>,
           ({String endpoint, bool forceRefresh})
         > {
-  const GetDataFamily._()
+  GetDataFamily._()
     : super(
         retry: null,
         name: r'getDataProvider',
@@ -138,7 +138,7 @@ final class GetDataFamily extends $Family
 }
 
 @ProviderFor(getListData)
-const getListDataProvider = GetListDataFamily._();
+final getListDataProvider = GetListDataFamily._();
 
 final class GetListDataProvider
     extends
@@ -148,7 +148,7 @@ final class GetListDataProvider
           FutureOr<List<dynamic>>
         >
     with $FutureModifier<List<dynamic>>, $FutureProvider<List<dynamic>> {
-  const GetListDataProvider._({
+  GetListDataProvider._({
     required GetListDataFamily super.from,
     required ({String endpoint, bool forceRefresh}) super.argument,
   }) : super(
@@ -204,7 +204,7 @@ final class GetListDataFamily extends $Family
           FutureOr<List<dynamic>>,
           ({String endpoint, bool forceRefresh})
         > {
-  const GetListDataFamily._()
+  GetListDataFamily._()
     : super(
         retry: null,
         name: r'getListDataProvider',
