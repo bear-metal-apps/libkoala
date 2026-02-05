@@ -14,15 +14,17 @@ class HiveCacheInterceptor extends Interceptor {
 
     final key = options.uri.toString();
     final forceRefresh = options.extra['forceRefresh'] == true;
+    final isOffline = options.extra['isOffline'] == true;
 
-    if (forceRefresh) {
+    if (forceRefresh && !isOffline) {
       box.delete(key);
     } else {
       final record = box.get(key);
       if (record is Map && record['timestamp'] is int) {
         final timestamp = record['timestamp'] as int;
 
-        if (DateTime.now().millisecondsSinceEpoch - timestamp < 3600000) {
+        if (DateTime.now().millisecondsSinceEpoch - timestamp < 3600000 ||
+            isOffline) {
           final cachedData = record['data'];
           final normalized = cachedData is Map
               ? Map<String, dynamic>.from(cachedData)
@@ -35,12 +37,25 @@ class HiveCacheInterceptor extends Interceptor {
               requestOptions: options,
               data: normalized,
               statusCode: 200,
+              statusMessage: 'Serving From Cache (Offline: $isOffline)',
             ),
           );
         } else {
-          box.delete(key);
+          if (!isOffline) {
+            box.delete(key);
+          }
         }
       }
+    }
+
+    if (isOffline) {
+      return handler.reject(
+        DioException(
+          requestOptions: options,
+          error: 'Offline: No cached data available',
+          type: DioExceptionType.connectionError,
+        ),
+      );
     }
 
     handler.next(options);

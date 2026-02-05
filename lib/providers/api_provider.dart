@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:hive_ce/hive.dart';
+import 'package:libkoala/providers/auth_provider.dart';
 import 'package:libkoala/utils/hive_cache_interceptor.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:libkoala/libkoala.dart';
@@ -32,19 +33,29 @@ Future<Map<String, dynamic>> getData(
   final dio = ref.watch(dioProvider);
 
   final authService = ref.watch(authProvider);
-  final String token = await authService.getAccessToken([
-    'api://bearmet.al/honeycomb/access',
-  ]);
+
+  String? token;
+  bool isOffline = false;
+
+  try {
+    token = await authService.getAccessToken([
+      'api://bearmet.al/honeycomb/access',
+    ]);
+  } on OfflineAuthException {
+    isOffline = true;
+  } catch (e) {
+    rethrow;
+  }
 
   try {
     final response = await dio.get(
       endpoint,
       options: Options(
         headers: {
-          'Authorization': 'Bearer $token',
+          if (token != null) 'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        extra: {'forceRefresh': forceRefresh},
+        extra: {'forceRefresh': forceRefresh, 'isOffline': isOffline},
       ),
     );
 
@@ -54,9 +65,8 @@ Future<Map<String, dynamic>> getData(
       throw Exception(
         'API Error: ${e.response?.statusCode} - ${e.response?.statusMessage}',
       );
-    } else {
-      throw Exception('Network Error: ${e.message}');
     }
+    throw Exception('Network Error: ${e.message}');
   }
 }
 
@@ -69,19 +79,29 @@ Future<List<dynamic>> getListData(
   final dio = ref.watch(dioProvider);
 
   final authService = ref.watch(authProvider);
-  final String token = await authService.getAccessToken([
-    'api://bearmet.al/honeycomb/access',
-  ]);
+
+  String? token;
+  bool isOffline = false;
+
+  try {
+    token = await authService.getAccessToken([
+      'api://bearmet.al/honeycomb/access',
+    ]);
+  } on OfflineAuthException {
+    isOffline = true;
+  } catch (e) {
+    rethrow;
+  }
 
   try {
     final response = await dio.get(
       endpoint,
       options: Options(
         headers: {
-          'Authorization': 'Bearer $token',
+          if (token != null) 'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        extra: {'forceRefresh': forceRefresh},
+        extra: {'forceRefresh': forceRefresh, 'isOffline': isOffline},
       ),
     );
 
@@ -91,8 +111,7 @@ Future<List<dynamic>> getListData(
       throw Exception(
         'API Error: ${e.response?.statusCode} - ${e.response?.statusMessage}',
       );
-    } else {
-      throw Exception('Network Error: ${e.message}');
     }
+    throw Exception('Network Error: ${e.message}');
   }
 }

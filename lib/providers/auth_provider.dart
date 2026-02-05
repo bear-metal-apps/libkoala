@@ -1,14 +1,13 @@
 import 'dart:convert';
 import 'dart:math';
-
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
+import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
 import 'package:libkoala/providers/device_info_provider.dart';
 import 'package:libkoala/providers/secure_storage_provider.dart';
 
@@ -82,6 +81,11 @@ class Auth {
   Future<void> login(List<String> scopes) async {
     _setStatus(AuthStatus.authenticating);
 
+    if (!await InternetConnection().hasInternetAccess) {
+      _setStatus(AuthStatus.unauthenticated);
+      throw OfflineAuthException('No internet connection available to login.');
+    }
+
     try {
       final verifier = _generateCodeVerifier();
       final challenge = _codeChallenge(verifier);
@@ -143,6 +147,13 @@ class Auth {
       throw Exception('Session expired (No refresh token)');
     }
 
+    if (!await InternetConnection().hasInternetAccess) {
+      // throw an error so other things know we're offline
+      throw OfflineAuthException(
+        'No internet connection: Cannot get access token',
+      );
+    }
+
     try {
       final newToken = await _fetchNewToken(refreshToken, scopes);
 
@@ -164,15 +175,22 @@ class Auth {
 
     final refreshToken = await storage.read(key: _refreshTokenKey);
 
-    if (refreshToken != null) {
-      try {
-        await getAccessToken(['User.Read']);
-        _setStatus(AuthStatus.authenticated);
-      } catch (_) {
-        await logout();
-      }
-    } else {
+    if (refreshToken == null) {
       _setStatus(AuthStatus.unauthenticated);
+      return;
+    }
+
+    // if we're offline we can just assume the user still has correct creds and log them in
+    if (!await InternetConnection().hasInternetAccess) {
+      _setStatus(AuthStatus.authenticated);
+      return;
+    }
+
+    try {
+      await getAccessToken(['User.Read']);
+      _setStatus(AuthStatus.authenticated);
+    } catch (e) {
+      await logout();
     }
   }
 
@@ -269,4 +287,13 @@ class OAuthToken {
       ),
     );
   }
+}
+
+class OfflineAuthException implements Exception {
+  final String message;
+
+  OfflineAuthException([this.message = 'No internet connection available']);
+
+  @override
+  String toString() => 'OfflineAuthException: $message';
 }
