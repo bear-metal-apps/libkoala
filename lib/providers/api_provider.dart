@@ -82,25 +82,12 @@ class HoneycombClient {
     }
   }
 
-  Future<Map<String, dynamic>> get(
+  Future<T> get<T>(
       String endpoint, {
         bool forceRefresh = false,
         Map<String, dynamic>? queryParams,
       }) async {
-    return _performRequest<Map<String, dynamic>>(
-      'GET',
-      endpoint,
-      forceRefresh: forceRefresh,
-      queryParameters: queryParams,
-    );
-  }
-
-  Future<List<dynamic>> getList(
-      String endpoint, {
-        bool forceRefresh = false,
-        Map<String, dynamic>? queryParams,
-      }) async {
-    return _performRequest<List<dynamic>>(
+    return _performRequest<T>(
       'GET',
       endpoint,
       forceRefresh: forceRefresh,
@@ -135,27 +122,27 @@ class HoneycombClient {
 }
 
 // keep these uncs for backwards compat
-@Deprecated('Use get() in honeycombClientProvider.')
+@Deprecated('Use get<Map<String, dynamic>>() in honeycombClientProvider.')
 @riverpod
 Future<Map<String, dynamic>> getData(
     Ref ref, {
       required String endpoint,
       bool forceRefresh = false,
     }) async {
-  return ref.watch(honeycombClientProvider).get(
+  return ref.watch(honeycombClientProvider).get<Map<String, dynamic>>(
     endpoint,
     forceRefresh: forceRefresh,
   );
 }
 
-@Deprecated('Use getList() in honeycombClientProvider.')
+@Deprecated('Use get<List<dynamic>>() in honeycombClientProvider.')
 @riverpod
 Future<List<dynamic>> getListData(
     Ref ref, {
       required String endpoint,
       bool forceRefresh = false,
     }) async {
-  return ref.watch(honeycombClientProvider).getList(
+  return ref.watch(honeycombClientProvider).get<List<dynamic>>(
     endpoint,
     forceRefresh: forceRefresh,
   );
