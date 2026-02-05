@@ -45,4 +45,4 @@ final class UserInfoProvider
   }
 }
 
-String _$userInfoHash() => r'6ba8fe0f9c9f062b17866cdee868de6b0854555e';
+String _$userInfoHash() => r'571d2b9921cf743ea95b1a0c502b9edfc9994ea3';

@@ -49,9 +49,53 @@ final class DioProvider extends $FunctionalProvider<Dio, Dio, Dio>
 
 String _$dioHash() => r'a87fda2698f6ed56419ea101c507cb0312a9cad3';
 
+@ProviderFor(honeycombClient)
+final honeycombClientProvider = HoneycombClientProvider._();
+
+final class HoneycombClientProvider
+    extends
+        $FunctionalProvider<HoneycombClient, HoneycombClient, HoneycombClient>
+    with $Provider<HoneycombClient> {
+  HoneycombClientProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'honeycombClientProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$honeycombClientHash();
+
+  @$internal
+  @override
+  $ProviderElement<HoneycombClient> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  HoneycombClient create(Ref ref) {
+    return honeycombClient(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(HoneycombClient value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<HoneycombClient>(value),
+    );
+  }
+}
+
+String _$honeycombClientHash() => r'c81fae1dfd17d1050164265d7ddf997b31e772e6';
+
 @ProviderFor(getData)
+@Deprecated('Use get() in honeycombClientProvider')
 final getDataProvider = GetDataFamily._();
 
+@Deprecated('Use get() in honeycombClientProvider')
 final class GetDataProvider
     extends
         $FunctionalProvider<
@@ -110,8 +154,9 @@ final class GetDataProvider
   }
 }
 
-String _$getDataHash() => r'98b17d61608fa54b3c4d64fe54fb7297d8873868';
+String _$getDataHash() => r'7f0c5f097e1c0469638de722284d49e8ed52abc8';
 
+@Deprecated('Use get() in honeycombClientProvider')
 final class GetDataFamily extends $Family
     with
         $FunctionalFamilyOverride<
@@ -127,6 +172,7 @@ final class GetDataFamily extends $Family
         isAutoDispose: true,
       );
 
+  @Deprecated('Use get() in honeycombClientProvider')
   GetDataProvider call({required String endpoint, bool forceRefresh = false}) =>
       GetDataProvider._(
         argument: (endpoint: endpoint, forceRefresh: forceRefresh),
@@ -138,8 +184,10 @@ final class GetDataFamily extends $Family
 }
 
 @ProviderFor(getListData)
+@Deprecated('Use getList() in honeycombClientProvider')
 final getListDataProvider = GetListDataFamily._();
 
+@Deprecated('Use getList() in honeycombClientProvider')
 final class GetListDataProvider
     extends
         $FunctionalProvider<
@@ -196,8 +244,9 @@ final class GetListDataProvider
   }
 }
 
-String _$getListDataHash() => r'f8453b1f8bae70d8399c0d7384d907bf753deb01';
+String _$getListDataHash() => r'8da7690d0f9de8c712861f6cf7088e5881e32335';
 
+@Deprecated('Use getList() in honeycombClientProvider')
 final class GetListDataFamily extends $Family
     with
         $FunctionalFamilyOverride<
@@ -213,6 +262,7 @@ final class GetListDataFamily extends $Family
         isAutoDispose: true,
       );
 
+  @Deprecated('Use getList() in honeycombClientProvider')
   GetListDataProvider call({
     required String endpoint,
     bool forceRefresh = false,
