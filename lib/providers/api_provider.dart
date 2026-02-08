@@ -6,6 +6,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'api_provider.g.dart';
 
+const _honeycombScope = 'ORLhqJbHiTfgdF3Q8hqIbmdwT1wTkkP7';
+
 @riverpod
 Dio dio(Ref ref) {
   final dio = Dio(
@@ -48,7 +50,7 @@ class HoneycombClient {
 
     try {
       token = await authService.getAccessToken([
-        'ORLhqJbHiTfgdF3Q8hqIbmdwT1wTkkP7',
+        _honeycombScope,
       ]);
     } on OfflineAuthException {
       isOffline = true;
@@ -74,8 +76,9 @@ class HoneycombClient {
       return response.data as T;
     } on DioException catch (e) {
       if (e.response != null) {
+        final responseData = e.response?.data;
         throw Exception(
-          'API Error: ${e.response?.statusCode} - ${e.response?.statusMessage}',
+          'API Error: ${e.response?.statusCode} - ${e.response?.statusMessage} ${responseData ?? ''}',
         );
       }
       throw Exception('Network Error: ${e.message}');

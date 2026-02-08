@@ -100,4 +100,4 @@ final class AuthProvider extends $FunctionalProvider<Auth, Auth, Auth>
   }
 }
 
-String _$authHash() => r'19fc96aa53622dd257ae888cb8b0fdbe670d37cb';
+String _$authHash() => r'444a7aa91216bb4c5b19fed6ac92fc580a73de5a';

@@ -184,7 +184,7 @@ class Auth {
     }
 
     try {
-      await getAccessToken(['openid', 'profile', 'email']);
+      await getAccessToken(['User.Read']);
       _setStatus(AuthStatus.authenticated);
     } catch (e) {
       await logout();
@@ -236,14 +236,27 @@ class Auth {
       body: body,
     );
 
+    Map<String, dynamic>? payload;
+    try {
+      payload = jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      payload = null;
+    }
+
     if (response.statusCode != 200) {
-      final error = jsonDecode(response.body);
+      final description = payload?['error_description'] ??
+          payload?['error'] ??
+          response.body;
       throw Exception(
-        'Auth Error: ${error['error_description'] ?? response.body}',
+        'Auth Error: HTTP ${response.statusCode} $description',
       );
     }
 
-    return OAuthToken.fromJson(jsonDecode(response.body));
+    if (payload == null) {
+      throw Exception('Auth Error: Invalid JSON response: ${response.body}');
+    }
+
+    return OAuthToken.fromJson(payload);
   }
 
   String _generateCodeVerifier() {
