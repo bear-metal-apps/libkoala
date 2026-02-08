@@ -13,17 +13,13 @@ import 'package:libkoala/providers/secure_storage_provider.dart';
 
 part 'auth_provider.g.dart';
 
-const _tenantId = '9bc79ca8-229e-4f3d-990c-300c8407fe5d';
-const _clientId = 'c001bbf4-138d-430c-861a-a83535463a53';
+const _auth0Domain = 'bearmetal2046.us.auth0.com';
+const _clientId = 'ORLhqJbHiTfgdF3Q8hqIbmdwT1wTkkP7';
 const _refreshTokenKey = 'refresh_token';
 
-final _authorizeEndpoint = Uri.parse(
-  'https://login.microsoftonline.com/$_tenantId/oauth2/v2.0/authorize',
-);
+final _authorizeEndpoint = Uri.parse('https://$_auth0Domain/authorize');
 
-final _tokenEndpoint = Uri.parse(
-  'https://login.microsoftonline.com/$_tenantId/oauth2/v2.0/token',
-);
+final _tokenEndpoint = Uri.parse('https://$_auth0Domain/oauth/token');
 
 enum AuthStatus { authenticated, unauthenticated, authenticating }
 
@@ -59,9 +55,8 @@ Auth auth(Ref ref) {
 
   final redirectUri = switch (deviceInfo.deviceOS) {
     DeviceOS.ios ||
-    DeviceOS.macos => 'msauth.org.tahomarobotics.beariscope://auth',
-    DeviceOS.android =>
-      'msauth://org.tahomarobotics.beariscope/VzSiQcXRmi2kyjzcA%2BmYLEtbGVs%3D',
+    DeviceOS.macos ||
+    DeviceOS.android => 'org.tahomarobotics.beariscope://callback',
     DeviceOS.web => 'https://scout.bearmet.al/auth.html',
     DeviceOS.windows || DeviceOS.linux => 'http://localhost:4000/auth',
   };
@@ -95,6 +90,7 @@ class Auth {
         'offline_access',
         'openid',
         'profile',
+        'email',
       }.join(' ');
 
       final authUrl = _authorizeEndpoint.replace(
@@ -105,6 +101,7 @@ class Auth {
           'scope': requestScopes,
           'code_challenge': challenge,
           'code_challenge_method': 'S256',
+          'audience': 'ORLhqJbHiTfgdF3Q8hqIbmdwT1wTkkP7',
         },
       );
 
@@ -187,7 +184,7 @@ class Auth {
     }
 
     try {
-      await getAccessToken(['User.Read']);
+      await getAccessToken(['openid', 'profile', 'email']);
       _setStatus(AuthStatus.authenticated);
     } catch (e) {
       await logout();

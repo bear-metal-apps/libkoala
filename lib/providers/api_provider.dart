@@ -48,7 +48,7 @@ class HoneycombClient {
 
     try {
       token = await authService.getAccessToken([
-        'api://bearmet.al/honeycomb/access',
+        'ORLhqJbHiTfgdF3Q8hqIbmdwT1wTkkP7',
       ]);
     } on OfflineAuthException {
       isOffline = true;

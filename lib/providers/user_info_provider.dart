@@ -1,11 +1,12 @@
 import 'dart:typed_data';
-
 import 'package:dio/dio.dart';
-import 'package:libkoala/providers/api_provider.dart'; // Import your dioProvider
+import 'package:libkoala/providers/api_provider.dart';
 import 'package:libkoala/providers/auth_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'user_info_provider.g.dart';
+
+const _auth0Domain = 'bearmetal2046.us.auth0.com';
 
 @Riverpod(keepAlive: true)
 Future<UserInfo?> userInfo(Ref ref) async {
@@ -19,7 +20,7 @@ Future<UserInfo?> userInfo(Ref ref) async {
   bool isOffline = false;
 
   try {
-    accessToken = await auth.getAccessToken(['User.Read']);
+    accessToken = await auth.getAccessToken(['openid', 'profile', 'email']);
   } on OfflineAuthException {
     isOffline = true;
   } catch (e) {
@@ -31,38 +32,48 @@ Future<UserInfo?> userInfo(Ref ref) async {
   };
 
   Map<String, dynamic>? data;
+
   try {
-    final meResponse = await dio.get(
-      'https://graph.microsoft.com/v1.0/me',
+    final userInfoResponse = await dio.get(
+      'https://$_auth0Domain/userinfo',
       options: Options(
         headers: headers,
         extra: {'isOffline': isOffline},
       ),
     );
-    data = meResponse.data as Map<String, dynamic>;
+    data = userInfoResponse.data as Map<String, dynamic>;
   } catch (e) {
     if (isOffline) return null;
-  }
-
-  Uint8List? photoBytes;
-  final photoResponse = await dio.get(
-    'https://graph.microsoft.com/v1.0/me/photo/\$value',
-    options: Options(
-      headers: headers,
-      responseType: ResponseType.bytes,
-      extra: {'isOffline': isOffline},
-    ),
-  );
-
-  if (photoResponse.statusCode == 200 && photoResponse.data != null) {
-    photoBytes = Uint8List.fromList((photoResponse.data as List).cast<int>());
+    rethrow;
   }
 
   if (data == null) return null;
 
+  // Fetch profile picture if available
+  Uint8List? photoBytes;
+  final photoUrl = data['picture'] as String?;
+
+  if (photoUrl != null) {
+    try {
+      final photoResponse = await dio.get(
+        photoUrl,
+        options: Options(
+          responseType: ResponseType.bytes,
+          extra: {'isOffline': isOffline},
+        ),
+      );
+
+      if (photoResponse.statusCode == 200 && photoResponse.data != null) {
+        photoBytes = Uint8List.fromList((photoResponse.data as List).cast<int>());
+      }
+    } catch (e) {
+      // Photo fetch failed, continue without it
+    }
+  }
+
   return UserInfo(
-    name: data['displayName'] as String?,
-    email: (data['mail'] ?? data['userPrincipalName']) as String?,
+    name: data['name'] as String?,
+    email: data['email'] as String?,
     photo: photoBytes,
   );
 }
