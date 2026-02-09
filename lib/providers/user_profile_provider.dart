@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -160,10 +159,7 @@ class UserProfileService {
       uploadUrl,
       data: bytes,
       options: Options(
-        headers: {
-          'x-ms-blob-type': 'BlockBlob',
-          'Content-Type': ?contentType,
-        },
+        headers: {'x-ms-blob-type': 'BlockBlob', 'Content-Type': ?contentType},
       ),
     );
 

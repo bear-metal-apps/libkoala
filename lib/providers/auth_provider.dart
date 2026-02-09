@@ -79,9 +79,7 @@ Auth auth(Ref ref) {
   final redirectUri = config.redirectUris[deviceInfo.deviceOS];
 
   if (redirectUri == null) {
-    throw Exception(
-      'No redirect URI configured for ${deviceInfo.deviceOS}',
-    );
+    throw Exception('No redirect URI configured for ${deviceInfo.deviceOS}');
   }
 
   return Auth(
@@ -250,9 +248,9 @@ class Auth {
   }
 
   Future<OAuthToken> _fetchNewToken(
-      String refreshToken,
-      List<String> scopes,
-      ) async {
+    String refreshToken,
+    List<String> scopes,
+  ) async {
     return _postRequest({
       'client_id': config.clientId,
       'grant_type': 'refresh_token',
@@ -276,12 +274,9 @@ class Auth {
     }
 
     if (response.statusCode != 200) {
-      final description = payload?['error_description'] ??
-          payload?['error'] ??
-          response.body;
-      throw Exception(
-        'Auth Error: HTTP ${response.statusCode} $description',
-      );
+      final description =
+          payload?['error_description'] ?? payload?['error'] ?? response.body;
+      throw Exception('Auth Error: HTTP ${response.statusCode} $description');
     }
 
     if (payload == null) {
