@@ -92,10 +92,10 @@ final class HoneycombClientProvider
 String _$honeycombClientHash() => r'c81fae1dfd17d1050164265d7ddf997b31e772e6';
 
 @ProviderFor(getData)
-@Deprecated('Use get() in honeycombClientProvider')
+@Deprecated('Use get<Map<String, dynamic>>() in honeycombClientProvider.')
 final getDataProvider = GetDataFamily._();
 
-@Deprecated('Use get() in honeycombClientProvider')
+@Deprecated('Use get<Map<String, dynamic>>() in honeycombClientProvider.')
 final class GetDataProvider
     extends
         $FunctionalProvider<
@@ -154,9 +154,9 @@ final class GetDataProvider
   }
 }
 
-String _$getDataHash() => r'7f0c5f097e1c0469638de722284d49e8ed52abc8';
+String _$getDataHash() => r'3b367812c1659d640b683fc58cbf6655fcc70b8b';
 
-@Deprecated('Use get() in honeycombClientProvider')
+@Deprecated('Use get<Map<String, dynamic>>() in honeycombClientProvider.')
 final class GetDataFamily extends $Family
     with
         $FunctionalFamilyOverride<
@@ -172,7 +172,7 @@ final class GetDataFamily extends $Family
         isAutoDispose: true,
       );
 
-  @Deprecated('Use get() in honeycombClientProvider')
+  @Deprecated('Use get<Map<String, dynamic>>() in honeycombClientProvider.')
   GetDataProvider call({required String endpoint, bool forceRefresh = false}) =>
       GetDataProvider._(
         argument: (endpoint: endpoint, forceRefresh: forceRefresh),
@@ -184,10 +184,10 @@ final class GetDataFamily extends $Family
 }
 
 @ProviderFor(getListData)
-@Deprecated('Use getList() in honeycombClientProvider')
+@Deprecated('Use get<List<dynamic>>() in honeycombClientProvider.')
 final getListDataProvider = GetListDataFamily._();
 
-@Deprecated('Use getList() in honeycombClientProvider')
+@Deprecated('Use get<List<dynamic>>() in honeycombClientProvider.')
 final class GetListDataProvider
     extends
         $FunctionalProvider<
@@ -244,9 +244,9 @@ final class GetListDataProvider
   }
 }
 
-String _$getListDataHash() => r'8da7690d0f9de8c712861f6cf7088e5881e32335';
+String _$getListDataHash() => r'2a579643b3876b9d1d60859822f8159a3e1da1b9';
 
-@Deprecated('Use getList() in honeycombClientProvider')
+@Deprecated('Use get<List<dynamic>>() in honeycombClientProvider.')
 final class GetListDataFamily extends $Family
     with
         $FunctionalFamilyOverride<
@@ -262,7 +262,7 @@ final class GetListDataFamily extends $Family
         isAutoDispose: true,
       );
 
-  @Deprecated('Use getList() in honeycombClientProvider')
+  @Deprecated('Use get<List<dynamic>>() in honeycombClientProvider.')
   GetListDataProvider call({
     required String endpoint,
     bool forceRefresh = false,

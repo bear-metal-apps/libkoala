@@ -6,12 +6,14 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'api_provider.g.dart';
 
+const _honeycombScope = 'ORLhqJbHiTfgdF3Q8hqIbmdwT1wTkkP7';
+
 @riverpod
 Dio dio(Ref ref) {
   final dio = Dio(
     BaseOptions(
       baseUrl:
-      'https://honeycomb-a3d3bbaacjhsaxbu.westus2-01.azurewebsites.net/api',
+          'https://honeycomb-a3d3bbaacjhsaxbu.westus2-01.azurewebsites.net/api',
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     ),
@@ -34,12 +36,12 @@ class HoneycombClient {
   HoneycombClient(this._ref);
 
   Future<T> _performRequest<T>(
-      String method,
-      String endpoint, {
-        dynamic data,
-        Map<String, dynamic>? queryParameters,
-        bool forceRefresh = false,
-      }) async {
+    String method,
+    String endpoint, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    bool forceRefresh = false,
+  }) async {
     final dio = _ref.read(dioProvider);
     final authService = _ref.read(authProvider);
 
@@ -47,9 +49,7 @@ class HoneycombClient {
     bool isOffline = false;
 
     try {
-      token = await authService.getAccessToken([
-        'api://bearmet.al/honeycomb/access',
-      ]);
+      token = await authService.getAccessToken([_honeycombScope]);
     } on OfflineAuthException {
       isOffline = true;
     } catch (e) {
@@ -74,8 +74,9 @@ class HoneycombClient {
       return response.data as T;
     } on DioException catch (e) {
       if (e.response != null) {
+        final responseData = e.response?.data;
         throw Exception(
-          'API Error: ${e.response?.statusCode} - ${e.response?.statusMessage}',
+          'API Error: ${e.response?.statusCode} - ${e.response?.statusMessage} ${responseData ?? ''}',
         );
       }
       throw Exception('Network Error: ${e.message}');
@@ -83,10 +84,10 @@ class HoneycombClient {
   }
 
   Future<T> get<T>(
-      String endpoint, {
-        bool forceRefresh = false,
-        Map<String, dynamic>? queryParams,
-      }) async {
+    String endpoint, {
+    bool forceRefresh = false,
+    Map<String, dynamic>? queryParams,
+  }) async {
     return _performRequest<T>(
       'GET',
       endpoint,
@@ -95,24 +96,15 @@ class HoneycombClient {
     );
   }
 
-  Future<T> post<T>(
-      String endpoint, {
-        required dynamic data,
-      }) async {
+  Future<T> post<T>(String endpoint, {required dynamic data}) async {
     return _performRequest<T>('POST', endpoint, data: data);
   }
 
-  Future<T> put<T>(
-      String endpoint, {
-        required dynamic data,
-      }) async {
+  Future<T> put<T>(String endpoint, {required dynamic data}) async {
     return _performRequest<T>('PUT', endpoint, data: data);
   }
 
-  Future<T> patch<T>(
-      String endpoint, {
-        required dynamic data,
-      }) async {
+  Future<T> patch<T>(String endpoint, {required dynamic data}) async {
     return _performRequest<T>('PATCH', endpoint, data: data);
   }
 
@@ -125,25 +117,23 @@ class HoneycombClient {
 @Deprecated('Use get<Map<String, dynamic>>() in honeycombClientProvider.')
 @riverpod
 Future<Map<String, dynamic>> getData(
-    Ref ref, {
-      required String endpoint,
-      bool forceRefresh = false,
-    }) async {
-  return ref.watch(honeycombClientProvider).get<Map<String, dynamic>>(
-    endpoint,
-    forceRefresh: forceRefresh,
-  );
+  Ref ref, {
+  required String endpoint,
+  bool forceRefresh = false,
+}) async {
+  return ref
+      .watch(honeycombClientProvider)
+      .get<Map<String, dynamic>>(endpoint, forceRefresh: forceRefresh);
 }
 
 @Deprecated('Use get<List<dynamic>>() in honeycombClientProvider.')
 @riverpod
 Future<List<dynamic>> getListData(
-    Ref ref, {
-      required String endpoint,
-      bool forceRefresh = false,
-    }) async {
-  return ref.watch(honeycombClientProvider).get<List<dynamic>>(
-    endpoint,
-    forceRefresh: forceRefresh,
-  );
+  Ref ref, {
+  required String endpoint,
+  bool forceRefresh = false,
+}) async {
+  return ref
+      .watch(honeycombClientProvider)
+      .get<List<dynamic>>(endpoint, forceRefresh: forceRefresh);
 }

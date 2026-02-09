@@ -62,6 +62,47 @@ abstract class _$AuthStatusNotifier extends $Notifier<AuthStatus> {
   }
 }
 
+@ProviderFor(auth0Config)
+final auth0ConfigProvider = Auth0ConfigProvider._();
+
+final class Auth0ConfigProvider
+    extends $FunctionalProvider<Auth0Config, Auth0Config, Auth0Config>
+    with $Provider<Auth0Config> {
+  Auth0ConfigProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'auth0ConfigProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$auth0ConfigHash();
+
+  @$internal
+  @override
+  $ProviderElement<Auth0Config> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  Auth0Config create(Ref ref) {
+    return auth0Config(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Auth0Config value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Auth0Config>(value),
+    );
+  }
+}
+
+String _$auth0ConfigHash() => r'640f847a5e3de0e4d682dcc18e12bbede8bfafd3';
+
 @ProviderFor(auth)
 final authProvider = AuthProvider._();
 
@@ -100,4 +141,4 @@ final class AuthProvider extends $FunctionalProvider<Auth, Auth, Auth>
   }
 }
 
-String _$authHash() => r'19fc96aa53622dd257ae888cb8b0fdbe670d37cb';
+String _$authHash() => r'b0e9403e68684cdfccf49ca9b6eade5ce99eb663';
