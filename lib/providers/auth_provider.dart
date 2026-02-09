@@ -13,13 +13,28 @@ import 'package:libkoala/providers/secure_storage_provider.dart';
 
 part 'auth_provider.g.dart';
 
-const _auth0Domain = 'bearmetal2046.us.auth0.com';
-const _clientId = 'ORLhqJbHiTfgdF3Q8hqIbmdwT1wTkkP7';
-const _refreshTokenKey = 'refresh_token';
+class Auth0Config {
+  final String domain;
+  final String clientId;
+  final String audience;
+  final Map<DeviceOS, String> redirectUris;
 
-final _authorizeEndpoint = Uri.parse('https://$_auth0Domain/authorize');
+  final String storageKeyPrefix;
 
-final _tokenEndpoint = Uri.parse('https://$_auth0Domain/oauth/token');
+  const Auth0Config({
+    required this.domain,
+    required this.clientId,
+    required this.audience,
+    required this.redirectUris,
+    this.storageKeyPrefix = '',
+  });
+
+  String get refreshTokenKey => '${storageKeyPrefix}refresh_token';
+
+  Uri get authorizeEndpoint => Uri.parse('https://$domain/authorize');
+
+  Uri get tokenEndpoint => Uri.parse('https://$domain/oauth/token');
+}
 
 enum AuthStatus { authenticated, unauthenticated, authenticating }
 
@@ -49,29 +64,48 @@ class AuthStatusNotifier extends _$AuthStatusNotifier implements Listenable {
 }
 
 @Riverpod(keepAlive: true)
+Auth0Config auth0Config(Ref ref) {
+  throw UnimplementedError(
+    'auth0ConfigProvider must be overridden with app-specific configuration',
+  );
+}
+
+@Riverpod(keepAlive: true)
 Auth auth(Ref ref) {
   final storage = ref.watch(secureStorageProvider);
   final deviceInfo = ref.watch(deviceInfoProvider);
+  final config = ref.watch(auth0ConfigProvider);
 
-  final redirectUri = switch (deviceInfo.deviceOS) {
-    DeviceOS.ios ||
-    DeviceOS.macos ||
-    DeviceOS.android => 'org.tahomarobotics.beariscope://callback',
-    DeviceOS.web => 'https://scout.bearmet.al/auth.html',
-    DeviceOS.windows || DeviceOS.linux => 'http://localhost:4000/auth',
-  };
+  final redirectUri = config.redirectUris[deviceInfo.deviceOS];
 
-  return Auth(ref: ref, storage: storage, redirectUri: redirectUri);
+  if (redirectUri == null) {
+    throw Exception(
+      'No redirect URI configured for ${deviceInfo.deviceOS}',
+    );
+  }
+
+  return Auth(
+    ref: ref,
+    storage: storage,
+    config: config,
+    redirectUri: redirectUri,
+  );
 }
 
 class Auth {
   final Ref ref;
   final FlutterSecureStorage storage;
+  final Auth0Config config;
   final String redirectUri;
 
   final Map<String, OAuthToken> _tokenCache = {};
 
-  Auth({required this.ref, required this.storage, required this.redirectUri});
+  Auth({
+    required this.ref,
+    required this.storage,
+    required this.config,
+    required this.redirectUri,
+  });
 
   Future<void> login(List<String> scopes) async {
     _setStatus(AuthStatus.authenticating);
@@ -93,15 +127,15 @@ class Auth {
         'email',
       }.join(' ');
 
-      final authUrl = _authorizeEndpoint.replace(
+      final authUrl = config.authorizeEndpoint.replace(
         queryParameters: {
-          'client_id': _clientId,
+          'client_id': config.clientId,
           'response_type': 'code',
           'redirect_uri': redirectUri,
           'scope': requestScopes,
           'code_challenge': challenge,
           'code_challenge_method': 'S256',
-          'audience': 'ORLhqJbHiTfgdF3Q8hqIbmdwT1wTkkP7',
+          'audience': config.audience,
         },
       );
 
@@ -138,14 +172,13 @@ class Auth {
       return cached.accessToken;
     }
 
-    final refreshToken = await storage.read(key: _refreshTokenKey);
+    final refreshToken = await storage.read(key: config.refreshTokenKey);
     if (refreshToken == null) {
       await logout();
       throw Exception('Session expired (No refresh token)');
     }
 
     if (!await InternetConnection().hasInternetAccess) {
-      // throw an error so other things know we're offline
       throw OfflineAuthException(
         'No internet connection: Cannot get access token',
       );
@@ -170,14 +203,13 @@ class Auth {
   Future<void> trySilentLogin() async {
     _setStatus(AuthStatus.authenticating);
 
-    final refreshToken = await storage.read(key: _refreshTokenKey);
+    final refreshToken = await storage.read(key: config.refreshTokenKey);
 
     if (refreshToken == null) {
       _setStatus(AuthStatus.unauthenticated);
       return;
     }
 
-    // if we're offline we can just assume the user still has correct creds and log them in
     if (!await InternetConnection().hasInternetAccess) {
       _setStatus(AuthStatus.authenticated);
       return;
@@ -203,13 +235,13 @@ class Auth {
 
   Future<void> _persistRefreshToken(String? token) async {
     if (token != null) {
-      await storage.write(key: _refreshTokenKey, value: token);
+      await storage.write(key: config.refreshTokenKey, value: token);
     }
   }
 
   Future<OAuthToken> _exchangeCode(String code, String verifier) async {
     return _postRequest({
-      'client_id': _clientId,
+      'client_id': config.clientId,
       'grant_type': 'authorization_code',
       'code': code,
       'redirect_uri': redirectUri,
@@ -218,11 +250,11 @@ class Auth {
   }
 
   Future<OAuthToken> _fetchNewToken(
-    String refreshToken,
-    List<String> scopes,
-  ) async {
+      String refreshToken,
+      List<String> scopes,
+      ) async {
     return _postRequest({
-      'client_id': _clientId,
+      'client_id': config.clientId,
       'grant_type': 'refresh_token',
       'refresh_token': refreshToken,
       'scope': scopes.join(' '),
@@ -231,7 +263,7 @@ class Auth {
 
   Future<OAuthToken> _postRequest(Map<String, String> body) async {
     final response = await http.post(
-      _tokenEndpoint,
+      config.tokenEndpoint,
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: body,
     );
@@ -285,7 +317,7 @@ class OAuthToken {
   });
 
   bool get isExpired => DateTime.now().toUtc().isAfter(
-    expiresAt.subtract(const Duration(minutes: 2)), // Buffer time
+    expiresAt.subtract(const Duration(minutes: 2)), // buffer time
   );
 
   factory OAuthToken.fromJson(Map<String, dynamic> json) {
