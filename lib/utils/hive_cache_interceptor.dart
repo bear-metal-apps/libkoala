@@ -15,22 +15,20 @@ class HiveCacheInterceptor extends Interceptor {
     final key = options.uri.toString();
     final forceRefresh = options.extra['forceRefresh'] == true;
     final isOffline = options.extra['isOffline'] == true;
+    final record = box.get(key);
 
-    if (forceRefresh && !isOffline) {
-      box.delete(key);
-    } else {
-      final record = box.get(key);
-      if (record is Map && record['timestamp'] is int) {
-        final timestamp = record['timestamp'] as int;
+    if (record is Map && record['timestamp'] is int) {
+      final timestamp = record['timestamp'] as int;
 
-        if (DateTime.now().millisecondsSinceEpoch - timestamp < 3600000 ||
-            isOffline) {
+      if (DateTime.now().millisecondsSinceEpoch - timestamp < 3600000 ||
+          isOffline) {
+        if (!forceRefresh || isOffline) {
           final cachedData = record['data'];
           final normalized = cachedData is Map
               ? Map<String, dynamic>.from(cachedData)
               : cachedData is List
-              ? List<dynamic>.from(cachedData)
-              : cachedData;
+                  ? List<dynamic>.from(cachedData)
+                  : cachedData;
 
           return handler.resolve(
             Response(
@@ -40,11 +38,9 @@ class HiveCacheInterceptor extends Interceptor {
               statusMessage: 'Serving From Cache (Offline: $isOffline)',
             ),
           );
-        } else {
-          if (!isOffline) {
-            box.delete(key);
-          }
         }
+      } else if (!isOffline && !forceRefresh) {
+        box.delete(key);
       }
     }
 
@@ -59,6 +55,40 @@ class HiveCacheInterceptor extends Interceptor {
     }
 
     handler.next(options);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    final request = err.requestOptions;
+
+    if (request.method == 'GET' &&
+        (err.type == DioExceptionType.connectionError ||
+            err.type == DioExceptionType.connectionTimeout ||
+            err.type == DioExceptionType.receiveTimeout ||
+            err.type == DioExceptionType.unknown)) {
+      final key = request.uri.toString();
+      final record = box.get(key);
+
+      if (record is Map && record.containsKey('data')) {
+        final cachedData = record['data'];
+        final normalized = cachedData is Map
+            ? Map<String, dynamic>.from(cachedData)
+            : cachedData is List
+                ? List<dynamic>.from(cachedData)
+                : cachedData;
+
+        return handler.resolve(
+          Response(
+            requestOptions: request,
+            data: normalized,
+            statusCode: 200,
+            statusMessage: 'Serving From Cache (Network Error Fallback)',
+          ),
+        );
+      }
+    }
+
+    handler.next(err);
   }
 
   @override
