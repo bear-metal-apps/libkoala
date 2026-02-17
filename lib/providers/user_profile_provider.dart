@@ -74,6 +74,7 @@ Future<UserInfo?> userInfo(Ref ref) async {
   return UserInfo(
     name: data['name'] as String?,
     email: data['email'] as String?,
+    emailVerified: data['email_verified'] as bool?,
     photo: photoBytes,
   );
 }
@@ -81,9 +82,10 @@ Future<UserInfo?> userInfo(Ref ref) async {
 class UserInfo {
   final String? name;
   final String? email;
+  final bool? emailVerified;
   final Uint8List? photo;
 
-  const UserInfo({this.name, this.email, this.photo});
+  const UserInfo({this.name, this.email, this.emailVerified, this.photo});
 }
 
 @Riverpod(keepAlive: true)
