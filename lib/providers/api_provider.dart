@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:libkoala/providers/auth_provider.dart';
+// CachePolicy is defined in HiveCacheInterceptor to avoid a circular import.
+export 'package:libkoala/utils/hive_cache_interceptor.dart' show CachePolicy;
 import 'package:libkoala/utils/hive_cache_interceptor.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -40,7 +42,7 @@ class HoneycombClient {
     String endpoint, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
-    bool forceRefresh = false,
+    CachePolicy cachePolicy = CachePolicy.cacheFirst,
   }) async {
     final dio = _ref.read(dioProvider);
     final authService = _ref.read(authProvider);
@@ -67,7 +69,7 @@ class HoneycombClient {
             if (token != null) 'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',
           },
-          extra: {'forceRefresh': forceRefresh, 'isOffline': isOffline},
+          extra: {'cachePolicy': cachePolicy, 'isOffline': isOffline},
         ),
       );
 
@@ -85,15 +87,52 @@ class HoneycombClient {
 
   Future<T> get<T>(
     String endpoint, {
-    bool forceRefresh = false,
+    CachePolicy cachePolicy = CachePolicy.cacheFirst,
     Map<String, dynamic>? queryParams,
   }) async {
     return _performRequest<T>(
       'GET',
       endpoint,
-      forceRefresh: forceRefresh,
+      cachePolicy: cachePolicy,
       queryParameters: queryParams,
     );
+  }
+
+  /// Marks the cached response for [endpoint] as stale without deleting it.
+  ///
+  /// The stale data remains available as an offline fallback. On the next
+  /// online fetch the network response will overwrite it atomically. Pair
+  /// this with `ref.invalidate(yourProvider)` to trigger a re-fetch:
+  ///
+  /// ```dart
+  /// onRefresh: () async {
+  ///   ref.read(honeycombClientProvider).invalidateCache('/events');
+  ///   ref.invalidate(myEventsProvider);
+  /// }
+  /// ```
+  void invalidateCache(String endpoint, {Map<String, dynamic>? queryParams}) {
+    final dio = _ref.read(dioProvider);
+    final uri = Uri.parse('${dio.options.baseUrl}$endpoint');
+    final key = queryParams != null
+        ? uri
+              .replace(
+                queryParameters: queryParams.map(
+                  (k, v) => MapEntry(k, v.toString()),
+                ),
+              )
+              .toString()
+        : uri.toString();
+
+    final box = Hive.box<dynamic>('api_cache');
+    final record = box.get(key);
+    if (record is Map) {
+      // sets timestamp to 0 which marks data as stale so the next fetch hits the
+      // network, but the data itself is preserved for offline
+      box.put(key, <String, dynamic>{
+        ...Map<String, dynamic>.from(record),
+        'timestamp': 0,
+      });
+    }
   }
 
   Future<T> post<T>(String endpoint, {required dynamic data}) async {
@@ -123,7 +162,12 @@ Future<Map<String, dynamic>> getData(
 }) async {
   return ref
       .watch(honeycombClientProvider)
-      .get<Map<String, dynamic>>(endpoint, forceRefresh: forceRefresh);
+      .get<Map<String, dynamic>>(
+        endpoint,
+        cachePolicy: forceRefresh
+            ? CachePolicy.networkFirst
+            : CachePolicy.cacheFirst,
+      );
 }
 
 @Deprecated('Use get<List<dynamic>>() in honeycombClientProvider.')
@@ -135,5 +179,10 @@ Future<List<dynamic>> getListData(
 }) async {
   return ref
       .watch(honeycombClientProvider)
-      .get<List<dynamic>>(endpoint, forceRefresh: forceRefresh);
+      .get<List<dynamic>>(
+        endpoint,
+        cachePolicy: forceRefresh
+            ? CachePolicy.networkFirst
+            : CachePolicy.cacheFirst,
+      );
 }

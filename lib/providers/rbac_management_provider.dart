@@ -101,7 +101,7 @@ class RbacManagementService {
   Future<List<ManagedRole>> getRoles() async {
     final payload = await _client.get<Map<String, dynamic>>(
       '/rbac/roles',
-      forceRefresh: true,
+      cachePolicy: CachePolicy.networkFirst,
     );
     return (payload['roles'] as List<dynamic>? ?? const [])
         .whereType<Map<String, dynamic>>()
@@ -154,7 +154,7 @@ class RbacManagementService {
   Future<List<ManagedUser>> getUsers() async {
     final payload = await _client.get<Map<String, dynamic>>(
       '/rbac/users',
-      forceRefresh: true,
+      cachePolicy: CachePolicy.networkFirst,
     );
     return (payload['users'] as List<dynamic>? ?? const [])
         .whereType<Map<String, dynamic>>()
@@ -183,7 +183,7 @@ class RbacManagementService {
   Future<RbacMetadata> getMetadata() async {
     final payload = await _client.get<Map<String, dynamic>>(
       '/rbac/metadata',
-      forceRefresh: true,
+      cachePolicy: CachePolicy.networkFirst,
     );
     return RbacMetadata.fromJson(payload);
   }

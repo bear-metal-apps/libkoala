@@ -108,7 +108,7 @@ Future<AuthMePayload?> authMe(Ref ref) async {
   final client = ref.watch(honeycombClientProvider);
   final payload = await client.get<Map<String, dynamic>>(
     '/auth/me',
-    forceRefresh: true,
+    cachePolicy: CachePolicy.networkFirst,
   );
   return AuthMePayload.fromJson(payload);
 }

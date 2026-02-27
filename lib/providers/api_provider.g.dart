@@ -154,7 +154,7 @@ final class GetDataProvider
   }
 }
 
-String _$getDataHash() => r'3b367812c1659d640b683fc58cbf6655fcc70b8b';
+String _$getDataHash() => r'5cba3632cc7fd42ba2e87ca0c35c8e41165c152c';
 
 @Deprecated('Use get<Map<String, dynamic>>() in honeycombClientProvider.')
 final class GetDataFamily extends $Family
@@ -244,7 +244,7 @@ final class GetListDataProvider
   }
 }
 
-String _$getListDataHash() => r'2a579643b3876b9d1d60859822f8159a3e1da1b9';
+String _$getListDataHash() => r'524363e2046b80629b6dffcb582b6deed8566cc0';
 
 @Deprecated('Use get<List<dynamic>>() in honeycombClientProvider.')
 final class GetListDataFamily extends $Family

@@ -7,7 +7,12 @@ export 'providers/auth_provider.dart'
 export 'providers/device_info_provider.dart'
     show deviceInfoProvider, DeviceInfo, DeviceOS;
 export 'providers/api_provider.dart'
-    show getDataProvider, getListDataProvider, honeycombClientProvider;
+    show
+        getDataProvider,
+        getListDataProvider,
+        honeycombClientProvider,
+        HoneycombClient,
+        CachePolicy;
 export 'providers/secure_storage_provider.dart' show secureStorageProvider;
 export 'providers/user_profile_provider.dart'
     show userInfoProvider, UserInfo, userProfileServiceProvider;

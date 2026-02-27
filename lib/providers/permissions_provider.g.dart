@@ -46,7 +46,7 @@ final class AuthMeProvider
   }
 }
 
-String _$authMeHash() => r'1d221f0a41b1446d956cd263adf8ac84db51cd3a';
+String _$authMeHash() => r'128c21b4c5f0f08104944149198eec5db4cb935a';
 
 @ProviderFor(permissionChecker)
 final permissionCheckerProvider = PermissionCheckerProvider._();
