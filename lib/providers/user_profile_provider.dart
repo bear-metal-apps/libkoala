@@ -168,4 +168,9 @@ class UserProfileService {
     await updateProfile(pictureUrl: publicUrl);
     return publicUrl;
   }
+
+  Future<void> deleteAccount() async {
+    final client = _ref.read(honeycombClientProvider);
+    await client.delete('/profile');
+  }
 }

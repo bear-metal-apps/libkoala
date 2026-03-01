@@ -170,6 +170,12 @@ class Auth {
       return cached.accessToken;
     }
 
+    final anyValid = _tokenCache.values.where((t) => !t.isExpired).firstOrNull;
+    if (anyValid != null) {
+      _tokenCache[scopeKey] = anyValid;
+      return anyValid.accessToken;
+    }
+
     final refreshToken = await storage.read(key: config.refreshTokenKey);
     if (refreshToken == null) {
       await logout();
@@ -214,7 +220,7 @@ class Auth {
     }
 
     try {
-      await getAccessToken(['User.Read']);
+      await getAccessToken(['openid', 'profile', 'email']);
       _setStatus(AuthStatus.authenticated);
     } catch (e) {
       await logout();
@@ -320,7 +326,7 @@ class OAuthToken {
       accessToken: json['access_token'] as String,
       refreshToken: json['refresh_token'] as String?,
       expiresAt: DateTime.now().toUtc().add(
-        Duration(seconds: json['expires_in'] as int),
+        Duration(seconds: (json['expires_in'] as num).toInt()),
       ),
     );
   }
