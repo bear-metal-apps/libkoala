@@ -135,6 +135,11 @@ class HoneycombClient {
     }
   }
 
+  // clears EVERYTHING, good for sign out but be careful with this
+  Future<void> clearCache() async {
+    await Hive.box<dynamic>('api_cache').clear();
+  }
+
   Future<T> post<T>(String endpoint, {required dynamic data}) async {
     return _performRequest<T>('POST', endpoint, data: data);
   }

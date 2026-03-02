@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -34,6 +35,13 @@ class Auth0Config {
   Uri get authorizeEndpoint => Uri.parse('https://$domain/authorize');
 
   Uri get tokenEndpoint => Uri.parse('https://$domain/oauth/token');
+
+  /// Auth0 v2 logout endpoint. [returnTo] must be registered in the Auth0
+  /// dashboard under "Allowed Logout URLs" for this client.
+  Uri logoutUri(String returnTo) =>
+      Uri.parse('https://$domain/v2/logout').replace(
+        queryParameters: {'client_id': clientId, 'returnTo': returnTo},
+      );
 }
 
 enum AuthStatus { authenticated, unauthenticated, authenticating }
@@ -227,7 +235,29 @@ class Auth {
     }
   }
 
-  Future<void> logout() async {
+  // federated opens the logout prompt in browser, preventing auto relogin with the same acct
+  Future<void> logout({bool federated = false}) async {
+    if (federated) {
+      try {
+        final logoutUrl = config.logoutUri(redirectUri);
+        await FlutterWebAuth2.authenticate(
+          url: logoutUrl.toString(),
+          callbackUrlScheme:
+              redirectUri == 'http://localhost:4000/auth'
+                  ? redirectUri
+                  : Uri.parse(redirectUri).scheme,
+          options: const FlutterWebAuth2Options(useWebview: false),
+        );
+      } catch (_) {
+        // do not block local sign-out if the browser logout fails
+      }
+    }
+
+    // not using honeycomb's method to keep it simple ig
+    try {
+      await Hive.box<dynamic>('api_cache').clear();
+    } catch (_) {}
+
     _tokenCache.clear();
     await storage.deleteAll();
     _setStatus(AuthStatus.unauthenticated);

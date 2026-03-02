@@ -38,7 +38,10 @@ Future<UserInfo?> userInfo(Ref ref) async {
       'https://$_auth0Domain/userinfo',
       options: Options(
         headers: headers,
-        extra: {'isOffline': isOffline, 'forceRefresh': true},
+        extra: {
+          'cachePolicy': CachePolicy.networkFirst,
+          'isOffline': isOffline,
+        },
       ),
     );
     data = userInfoResponse.data as Map<String, dynamic>;
