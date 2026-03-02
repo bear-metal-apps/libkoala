@@ -38,10 +38,9 @@ class Auth0Config {
 
   /// Auth0 v2 logout endpoint. [returnTo] must be registered in the Auth0
   /// dashboard under "Allowed Logout URLs" for this client.
-  Uri logoutUri(String returnTo) =>
-      Uri.parse('https://$domain/v2/logout').replace(
-        queryParameters: {'client_id': clientId, 'returnTo': returnTo},
-      );
+  Uri logoutUri(String returnTo) => Uri.parse(
+    'https://$domain/v2/logout',
+  ).replace(queryParameters: {'client_id': clientId, 'returnTo': returnTo});
 }
 
 enum AuthStatus { authenticated, unauthenticated, authenticating }
@@ -242,10 +241,9 @@ class Auth {
         final logoutUrl = config.logoutUri(redirectUri);
         await FlutterWebAuth2.authenticate(
           url: logoutUrl.toString(),
-          callbackUrlScheme:
-              redirectUri == 'http://localhost:4000/auth'
-                  ? redirectUri
-                  : Uri.parse(redirectUri).scheme,
+          callbackUrlScheme: redirectUri == 'http://localhost:4000/auth'
+              ? redirectUri
+              : Uri.parse(redirectUri).scheme,
           options: const FlutterWebAuth2Options(useWebview: false),
         );
       } catch (_) {

@@ -12,6 +12,7 @@ class PermissionKey {
   static const pitsRead = 'pits.read';
   static const pitsUpload = 'pits.upload';
   static const notesRead = 'notes.read';
+  static const driveTeamUpload = 'drive_team.upload';
   static const scoutsRead = 'scouts.read';
   static const scoutsManage = 'scouts.manage';
   static const usersRolesManage = 'rbac.manage';
