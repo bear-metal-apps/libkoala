@@ -36,6 +36,8 @@ export 'providers/rbac_management_provider.dart'
         ManagedUser,
         RbacMetadata,
         RbacPermissionMetadata;
+export 'providers/device_credentials_provider.dart'
+    show DeviceCredentials, deviceCredentialsProvider;
 export 'ui/widgets/profile_picture.dart' show ProfilePicture;
 export 'ui/widgets/text_divider.dart' show TextDivider;
 export 'ui/widgets/tileable_card.dart' show TileableCard;

@@ -35,7 +35,11 @@ HoneycombClient honeycombClient(Ref ref) {
 class HoneycombClient {
   final Ref _ref;
 
-  HoneycombClient(this._ref);
+  /// Optional override for token acquisition. When provided, this is called
+  /// instead of the default PKCE auth flow. Used by Pawfinder's M2M auth.
+  final Future<String?> Function()? tokenOverride;
+
+  HoneycombClient(this._ref, {this.tokenOverride});
 
   Future<T> _performRequest<T>(
     String method,
@@ -45,13 +49,17 @@ class HoneycombClient {
     CachePolicy cachePolicy = CachePolicy.cacheFirst,
   }) async {
     final dio = _ref.read(dioProvider);
-    final authService = _ref.read(authProvider);
 
     String? token;
     bool isOffline = false;
 
     try {
-      token = await authService.getAccessToken([_honeycombScope]);
+      if (tokenOverride != null) {
+        token = await tokenOverride!();
+      } else {
+        final authService = _ref.read(authProvider);
+        token = await authService.getAccessToken([_honeycombScope]);
+      }
     } on OfflineAuthException {
       isOffline = true;
     } catch (e) {

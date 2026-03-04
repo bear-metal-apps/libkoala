@@ -18,6 +18,7 @@ class PermissionKey {
   static const usersRolesManage = 'rbac.manage';
   static const picklistsRead = 'picklists.read';
   static const picklistsManage = 'picklists.manage';
+  static const deviceProvision = 'device.provision';
 }
 
 class AuthUserAccess {

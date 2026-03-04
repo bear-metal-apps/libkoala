@@ -45,7 +45,7 @@ final class UserInfoProvider
   }
 }
 
-String _$userInfoHash() => r'700c4ffe2453653e7a58c7b5dc7e348a2fe82722';
+String _$userInfoHash() => r'61d48734ed1a9c65d636cf7beb1419f5256ce501';
 
 @ProviderFor(userProfileService)
 final userProfileServiceProvider = UserProfileServiceProvider._();
