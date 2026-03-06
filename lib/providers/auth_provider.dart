@@ -7,7 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:http/http.dart' as http;
-import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
+import 'package:libkoala/providers/connectivity_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:libkoala/providers/device_info_provider.dart';
 import 'package:libkoala/providers/secure_storage_provider.dart';
@@ -115,7 +115,7 @@ class Auth {
   Future<void> login(List<String> scopes) async {
     _setStatus(AuthStatus.authenticating);
 
-    if (!await InternetConnection().hasInternetAccess) {
+    if (!await checkOnline(ref)) {
       _setStatus(AuthStatus.unauthenticated);
       throw OfflineAuthException('No internet connection available to login.');
     }
@@ -189,7 +189,7 @@ class Auth {
       throw Exception('Session expired (No refresh token)');
     }
 
-    if (!await InternetConnection().hasInternetAccess) {
+    if (!await checkOnline(ref)) {
       throw OfflineAuthException(
         'No internet connection: Cannot get access token',
       );
@@ -221,7 +221,7 @@ class Auth {
       return;
     }
 
-    if (!await InternetConnection().hasInternetAccess) {
+    if (!await checkOnline(ref)) {
       _setStatus(AuthStatus.authenticated);
       return;
     }

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:libkoala/providers/auth_provider.dart';
+import 'package:libkoala/providers/connectivity_provider.dart';
 // CachePolicy is defined in HiveCacheInterceptor to avoid a circular import.
 export 'package:libkoala/utils/hive_cache_interceptor.dart' show CachePolicy;
 import 'package:libkoala/utils/hive_cache_interceptor.dart';
@@ -50,20 +51,28 @@ class HoneycombClient {
   }) async {
     final dio = _ref.read(dioProvider);
 
+    // Await a real connectivity probe using the shared InternetConnection
+    // instance. This is necessary because the stream-based connectivityProvider
+    // may not have emitted its first value yet at startup, causing
+    // isDefinitelyOffline() to return false even when actually offline, which
+    // would let the auth/network path proceed and time out.
+    bool isOffline = !(await checkOnline(_ref));
     String? token;
-    bool isOffline = false;
 
-    try {
-      if (tokenOverride != null) {
-        token = await tokenOverride!();
-      } else {
-        final authService = _ref.read(authProvider);
-        token = await authService.getAccessToken([_honeycombScope]);
+    if (!isOffline) {
+      try {
+        if (tokenOverride != null) {
+          token = await tokenOverride!();
+        } else {
+          final authService = _ref.read(authProvider);
+          token = await authService.getAccessToken([_honeycombScope]);
+        }
+      } on OfflineAuthException {
+        // Connectivity changed between the check and the token fetch.
+        isOffline = true;
+      } catch (e) {
+        rethrow;
       }
-    } on OfflineAuthException {
-      isOffline = true;
-    } catch (e) {
-      rethrow;
     }
 
     try {

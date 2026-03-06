@@ -4,6 +4,8 @@ library;
 
 export 'providers/auth_provider.dart'
     show authProvider, authStatusProvider, AuthStatus, Auth;
+export 'providers/connectivity_provider.dart'
+    show connectivityProvider, internetConnectionProvider, checkOnline, isDefinitelyOffline;
 export 'providers/device_info_provider.dart'
     show deviceInfoProvider, DeviceInfo, DeviceOS;
 export 'providers/api_provider.dart'
